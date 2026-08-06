@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     ANIMATION ENGINE WITH PHYSICAL STAMP
+     ANIMATION ENGINE WITH TOP-RIGHT STAMP ENTRANCE
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,27 +272,27 @@
 
   await document.fonts.ready;
 
-  // TIMELINE WITH PHYSICAL STAMP (~9.8 seconds)
+  // TIMELINE (~9.8 seconds)
   const T = {
-    FADE_IN:      300,
-    WALK_START:   400,
-    WALK_END:     2400,
-    LOOK_START:   2400,
-    LOOK_END:     3100,
-    TURN_START:   3100,
-    TURN_END:     3600,
-    RAISE_START:  3600,
-    RAISE_END:    4200,
-    WRITE_START:  4200,
-    WRITE_END:    6600,
-    STAMP_APPROACH: 6600,
-    STAMP_PRESS:    7100, // Stamp slams onto wall
-    STAMP_RELEASE:  7700, // Stamp lifts back off wall
-    STEP_START:     7700,
-    STEP_END:       8300,
-    GUILT_START:    8300,
-    GUILT_END:      9800,
-    DONE:           9800,
+    FADE_IN:        300,
+    WALK_START:     400,
+    WALK_END:       2400,
+    LOOK_START:     2400,
+    LOOK_END:       3100,
+    TURN_START:     3100,
+    TURN_END:       3600,
+    RAISE_START:    3600,
+    RAISE_END:      4200,
+    WRITE_START:    4200,
+    WRITE_END:      6400,
+    STAMP_ENTRANCE: 6400, // Stamp swoops in from top right
+    STAMP_PRESS:    7000, // Stamp presses against wall
+    STAMP_EXIT:     7600, // Stamp lifts & retracts back to top right
+    STEP_START:     7600,
+    STEP_END:       8200,
+    GUILT_START:    8200,
+    GUILT_END:      9600,
+    DONE:           9600,
   };
 
   const WRITE_TEXT = 'GHOSTMARK';
@@ -353,48 +353,48 @@
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* Physical Wooden Handheld Rubber Stamp Object */
-  function drawPhysicalStampTool(ctx, x, y, scale, rotationAngle) {
+  /* Physical Wooden Rubber Stamp Object (Enters floating from top right) */
+  function drawPhysicalStampObject(ctx, x, y, scale, rotationAngle) {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotationAngle);
     ctx.scale(scale, scale);
 
-    // Stamp Handle Knob (wooden polished top)
+    // Wooden Handle Knob
     ctx.beginPath();
-    ctx.arc(0, -32, 14, 0, Math.PI * 2);
-    ctx.fillStyle = '#6b4423';
+    ctx.arc(0, -36, 16, 0, Math.PI * 2);
+    ctx.fillStyle = '#7a4e28';
     ctx.fill();
-    ctx.strokeStyle = '#3d2512';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#422a15';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Handle Neck / Stem
-    ctx.fillStyle = '#4a2e16';
+    // Handle Neck Stem
+    ctx.fillStyle = '#52341b';
     ctx.beginPath();
-    ctx.moveTo(-6, -20);
-    ctx.lineTo(6, -20);
-    ctx.lineTo(10, 0);
-    ctx.lineTo(-10, 0);
+    ctx.moveTo(-7, -22);
+    ctx.lineTo(7, -22);
+    ctx.lineTo(12, 0);
+    ctx.lineTo(-12, 0);
     ctx.closePath();
     ctx.fill();
 
-    // Base Collar (metal ring)
-    ctx.fillStyle = '#22222a';
-    ctx.fillRect(-14, 0, 28, 6);
+    // Base Brass Collar
+    ctx.fillStyle = '#282834';
+    ctx.fillRect(-16, 0, 32, 7);
 
-    // Rubber Die Base Block
-    ctx.fillStyle = '#181820';
+    // Main Stamp Body Block
+    ctx.fillStyle = '#1a1a24';
     ctx.strokeStyle = '#c8f000';
-    ctx.lineWidth = 1.5;
-    ctx.fillRect(-18, 6, 36, 12);
-    ctx.strokeRect(-18, 6, 36, 12);
+    ctx.lineWidth = 2;
+    ctx.fillRect(-22, 7, 44, 14);
+    ctx.strokeRect(-22, 7, 44, 14);
 
-    // Bottom Rubber Die Face (Green ink glow tip)
+    // Rubber Ink Die Face
     ctx.fillStyle = '#c8f000';
     ctx.shadowColor = '#c8f000';
-    ctx.shadowBlur = 10;
-    ctx.fillRect(-16, 18, 32, 4);
+    ctx.shadowBlur = 14;
+    ctx.fillRect(-20, 21, 40, 5);
 
     ctx.restore();
   }
@@ -408,8 +408,6 @@
       hunch,
       eyeOffX, eyeOffY,
       armProgress,
-      stampStage, // 'idle', 'approach', 'press', 'release'
-      stampProgress,
       headTurnBack,
     } = opts;
 
@@ -508,20 +506,11 @@
 
     ctx.restore(); // Left arm
 
-    /* Right Arm (Holding Pen or Physical Stamp Object) */
+    /* Right Arm (Writing arm) */
     ctx.save();
     ctx.translate(22 * s, -96 * s);
 
-    if (stampStage !== 'idle') {
-      // Stamping action: Arm raises physical stamp up and presses against wall
-      let armAngle = -135;
-      if (stampStage === 'press') {
-        armAngle = -145 + Math.sin(stampProgress * Math.PI) * 15; // slam forward
-      } else if (stampStage === 'release') {
-        armAngle = -130 + stampProgress * 40; // pull back
-      }
-      ctx.rotate((armAngle * Math.PI) / 180);
-    } else if (armProgress > 0) {
+    if (armProgress > 0) {
       const armAngle = 10 * (1 - armProgress) + (-140) * armProgress;
       ctx.rotate((armAngle * Math.PI) / 180);
     } else {
@@ -533,26 +522,20 @@
     ctx.roundRect(-5 * s, 0, 10 * s, 50 * s, 4 * s);
     ctx.fill();
 
-    // Hand holding Physical Rubber Stamp Tool!
+    // Hand & Marker Pen
     ctx.translate(0, 48 * s);
     ctx.fillStyle = '#1c1c24';
     ctx.beginPath();
     ctx.arc(0, 0, 5 * s, 0, Math.PI * 2);
     ctx.fill();
 
-    if (stampStage !== 'idle') {
-      // Draw Physical Rubber Stamp Object in hand
-      drawPhysicalStampTool(ctx, 0, 14 * s, 0.75 * s, Math.PI / 2);
-    } else {
-      // Normal marker tip while writing
-      ctx.fillStyle = '#c8f000';
-      ctx.shadowColor = '#c8f000';
-      ctx.shadowBlur = 8 * s;
-      ctx.beginPath();
-      ctx.arc(0, 14 * s, 3 * s, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
+    ctx.fillStyle = '#c8f000';
+    ctx.shadowColor = '#c8f000';
+    ctx.shadowBlur = 8 * s;
+    ctx.beginPath();
+    ctx.arc(0, 14 * s, 3 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
 
     ctx.restore(); // Right arm
 
@@ -623,7 +606,6 @@
     ctx.shadowColor = '#c8f000';
     ctx.shadowBlur = glowIntensity;
 
-    // Shield/Ghost outline
     ctx.beginPath();
     ctx.moveTo(0, -10);
     ctx.bezierCurveTo(-4.42, -10, -8, -6.42, -8, -2);
@@ -646,7 +628,6 @@
     ctx.lineWidth = 2.2;
     ctx.stroke();
 
-    // Glowing Eyes inside Logo Stamp
     ctx.fillStyle = '#c8f000';
     ctx.beginPath();
     ctx.arc(-3, -2, 1.8, 0, Math.PI * 2);
@@ -692,15 +673,51 @@
       cx += lw;
     }
 
-    // LOGO PRINTED IMPRESSION APPEARS AS STAMP IS PULLED BACK
+    const stampTargetX = cx + stampWidth / 2 + 18;
+
+    // LOGO PRINTED IMPRESSION APPEARS AS STAMP PRESSES & RELEASES
     if (elapsed >= T.STAMP_PRESS) {
-      const stampX = cx + stampWidth / 2 + 18;
       const revealProgress = linear((elapsed - T.STAMP_PRESS) / 400);
-
       const opacity = ease(revealProgress);
-      const glow = 20 + Math.sin(revealProgress * Math.PI) * 15;
+      const glow = 22 + Math.sin(revealProgress * Math.PI) * 15;
 
-      drawGhostmarkLogoStampImpression(ctx, stampX, textY, stampWidth, opacity, glow);
+      drawGhostmarkLogoStampImpression(ctx, stampTargetX, textY, stampWidth, opacity, glow);
+    }
+
+    // ANIMATED PHYSICAL STAMP ENTRANCE FROM TOP-RIGHT
+    if (elapsed >= T.STAMP_ENTRANCE && elapsed <= T.STAMP_EXIT + 600) {
+      const startX = W * 0.92;
+      const startY = -120;
+      const targetX = stampTargetX;
+      const targetY = textY;
+
+      let stampX = startX, stampY = startY, scale = Math.min(W/1200, H/700) * 1.5;
+
+      if (elapsed < T.STAMP_PRESS) {
+        // Swoop down from top right to wall
+        const p = ease((elapsed - T.STAMP_ENTRANCE) / (T.STAMP_PRESS - T.STAMP_ENTRANCE));
+        stampX = startX + (targetX - startX) * p;
+        stampY = startY + (targetY - startY) * p;
+      } else if (elapsed <= T.STAMP_EXIT) {
+        // Press against wall and retract back up to top right
+        const p = (elapsed - T.STAMP_PRESS) / (T.STAMP_EXIT - T.STAMP_PRESS);
+        if (p < 0.3) {
+          // Slam impact
+          stampX = targetX;
+          stampY = targetY;
+        } else {
+          // Retract back up to top right
+          const exitP = ease((p - 0.3) / 0.7);
+          stampX = targetX + (startX - targetX) * exitP;
+          stampY = targetY + (startY - targetY) * exitP;
+        }
+      } else {
+        stampX = startX;
+        stampY = startY;
+      }
+
+      // Draw physical stamp tool swooping from top right
+      drawPhysicalStampObject(ctx, stampX, stampY, scale, -0.3);
     }
   }
 
@@ -724,8 +741,6 @@
     let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
     let eyeOffX = 0, eyeOffY = 0;
     let armProgress = 0;
-    let stampStage = 'idle'; // 'idle', 'approach', 'press', 'release'
-    let stampProgress = 0;
     let headTurnBack = 0;
 
     if (elapsed < T.WALK_START) {
@@ -750,34 +765,24 @@
       charFacing = -1;
       hunch = 0.65;
       armProgress = linear((elapsed - T.RAISE_START) / (T.RAISE_END - T.RAISE_START));
-    } else if (elapsed < T.STAMP_PRESS) {
-      // Approach wall with physical stamp
-      charX = W * 0.48;
+    } else if (elapsed < T.STEP_START) {
+      // Character steps back while stamp swoops in from top right
+      const p = linear((elapsed - T.WRITE_END) / 600);
+      charX = W * 0.48 + p * 20 * s;
       charFacing = -1;
-      hunch = 0.65;
-      stampStage = 'approach';
-      stampProgress = linear((elapsed - T.STAMP_APPROACH) / (T.STAMP_PRESS - T.STAMP_APPROACH));
-    } else if (elapsed < T.STAMP_RELEASE) {
-      // Firmly press physical stamp against wall
-      charX = W * 0.48;
-      charFacing = -1;
-      hunch = 0.70;
-      stampStage = 'press';
-      stampProgress = linear((elapsed - T.STAMP_PRESS) / (T.STAMP_RELEASE - T.STAMP_PRESS));
+      armProgress = Math.max(0, 1 - p);
     } else if (elapsed < T.GUILT_END) {
-      // Release & Pull physical stamp back -> reveals printed logo mark!
       const p = linear((elapsed - T.STEP_START) / (T.STEP_END - T.STEP_START));
-      charX = W * 0.48 + p * 36 * s;
+      charX = W * 0.48 + (20 + p * 16) * s;
       charFacing = -1;
-      stampStage = 'release';
-      stampProgress = linear((elapsed - T.STAMP_RELEASE) / 600);
+      armProgress = 0;
       headTurnBack = ease(linear((elapsed - T.GUILT_START) / (T.GUILT_END - T.GUILT_START)));
       eyeOffX = 0.85;
       eyeOffY = -0.1;
     } else {
       charX = W * 0.48 + 36 * s;
       charFacing = -1;
-      stampStage = 'idle';
+      armProgress = 0;
       headTurnBack = 1.0;
       eyeOffX = 0.9;
       eyeOffY = -0.1;
@@ -787,12 +792,12 @@
       }
     }
 
-    // 2. Draw Text & Printed Logo Stamp Impression
+    // 2. Draw Text & Logo Stamp from Top Right
     if (elapsed >= T.WRITE_START) {
       drawWallTextAndStamp(elapsed, textY);
     }
 
-    // 3. Draw Character with Physical Stamp Object in hand
+    // 3. Draw Character
     drawCharacter({
       x: charX,
       y: floorY,
@@ -803,8 +808,6 @@
       eyeOffX,
       eyeOffY,
       armProgress,
-      stampStage,
-      stampProgress,
       headTurnBack,
     });
 
