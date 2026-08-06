@@ -172,10 +172,11 @@ export function analyzeImageIntegrity(imageData, hasWatermark = false) {
   const height = imageData.height;
   const data = imageData.data;
 
-  const cols = 16;
-  const rows = 16;
-  const blockW = Math.floor(width / cols);
-  const blockH = Math.floor(height / rows);
+  // Fine 32x32 Inspection Grid (1024 blocks) for pinpoint stroke & line detection
+  const cols = 32;
+  const rows = 32;
+  const blockW = Math.max(1, Math.floor(width / cols));
+  const blockH = Math.max(1, Math.floor(height / rows));
 
   let intactBlocks = 0;
   const grid = [];
@@ -188,10 +189,20 @@ export function analyzeImageIntegrity(imageData, hasWatermark = false) {
       let zeros = 0;
       let ones = 0;
       let pixelCount = 0;
+      let editedPixels = 0;
 
       for (let y = startY; y < startY + blockH && y < height; y++) {
         for (let x = startX; x < startX + blockW && x < width; x++) {
           const idx = (y * width + x) * 4;
+          const red = data[idx];
+          const green = data[idx + 1];
+          const blue = data[idx + 2];
+
+          // Check if pixel was overwritten by solid drawing strokes (black lines, paint, etc.)
+          if ((red < 5 && green < 5 && blue < 5) || (red > 250 && green > 250 && blue > 250)) {
+            editedPixels++;
+          }
+
           for (let ch = 0; ch < 3; ch++) {
             const lsb = data[idx + ch] & 3;
             if (lsb === 0 || lsb === 3) zeros++;
@@ -201,29 +212,28 @@ export function analyzeImageIntegrity(imageData, hasWatermark = false) {
         }
       }
 
-      // Calculate bit entropy / balance ratio
       const total = zeros + ones;
       const balance = total > 0 ? Math.min(zeros, ones) / total : 0;
       const score = Math.min(1.0, balance * 2.1);
+      const strokeRatio = pixelCount > 0 ? (editedPixels * 3) / pixelCount : 0;
 
       let status = 'intact';
       if (hasWatermark) {
-        // When watermark is embedded, test for payload integrity
-        if (score > 0.65) {
+        if (strokeRatio > 0.08) {
+          status = 'tampered'; // Red: Drawn Line / Stroke Overwrite
+        } else if (score > 0.6) {
           status = 'intact'; // Green: Authentic Watermark Payload
           intactBlocks++;
-        } else if (score > 0.4) {
-          status = 'warning'; // Yellow: Minor Bit Noise
+        } else if (score > 0.35) {
+          status = 'warning'; // Yellow: Minor Noise
         } else {
-          status = 'tampered'; // Red: Tampered / Stripped Region
+          status = 'tampered'; // Red: Altered / Edited Region
         }
       } else {
-        // Unwatermarked image: test for lossy compression / noise artifacts
-        if (score < 0.65) {
-          status = 'tampered'; // Red: High Compression / Artifact Noise
-          intactBlocks++;
+        if (strokeRatio > 0.08 || score < 0.6) {
+          status = 'tampered'; // Red: Edited / Compression Noise
         } else {
-          status = 'neutral'; // Dark: Clean unwatermarked pixel region
+          status = 'neutral';
         }
       }
 
