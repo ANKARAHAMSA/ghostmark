@@ -140,6 +140,102 @@ export function extractWatermark(imageData) {
 }
 
 /**
+ * Analyze Image LSB Integrity Grid for Tamper Detection Heatmap
+ * @param {ImageData} imageData
+ * @param {boolean} hasWatermark
+ * @returns {{ overallScore: number, grid: Array, renderHeatmap: Function }}
+ */
+export function analyzeImageIntegrity(imageData, hasWatermark = false) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const data = imageData.data;
+
+  const cols = 16;
+  const rows = 16;
+  const blockW = Math.floor(width / cols);
+  const blockH = Math.floor(height / rows);
+
+  let intactBlocks = 0;
+  const grid = [];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const startX = c * blockW;
+      const startY = r * blockH;
+
+      let zeros = 0;
+      let ones = 0;
+      let pixelCount = 0;
+
+      for (let y = startY; y < startY + blockH && y < height; y++) {
+        for (let x = startX; x < startX + blockW && x < width; x++) {
+          const idx = (y * width + x) * 4;
+          for (let ch = 0; ch < 3; ch++) {
+            const lsb = data[idx + ch] & 3;
+            if (lsb === 0 || lsb === 3) zeros++;
+            else ones++;
+            pixelCount++;
+          }
+        }
+      }
+
+      // Calculate bit entropy / balance ratio
+      const total = zeros + ones;
+      const balance = total > 0 ? Math.min(zeros, ones) / total : 0;
+      const score = Math.min(1.0, balance * 2.1);
+
+      let status = 'intact';
+      if (hasWatermark) {
+        if (score > 0.65) {
+          status = 'intact';
+          intactBlocks++;
+        } else if (score > 0.4) {
+          status = 'warning';
+        } else {
+          status = 'tampered';
+        }
+      } else {
+        // Without watermark signature
+        if (score > 0.75) {
+          status = 'intact';
+          intactBlocks++;
+        } else {
+          status = 'tampered';
+        }
+      }
+
+      grid.push({ col: c, row: r, x: startX, y: startY, w: blockW, h: blockH, score, status });
+    }
+  }
+
+  const overallScore = Math.round((intactBlocks / (cols * rows)) * 100);
+
+  function renderHeatmap(targetCanvas) {
+    const ctx = targetCanvas.getContext('2d');
+    targetCanvas.width = width;
+    targetCanvas.height = height;
+
+    for (const b of grid) {
+      if (b.status === 'intact') {
+        ctx.fillStyle = 'rgba(200, 240, 0, 0.28)'; // Lime Intact
+        ctx.strokeStyle = 'rgba(200, 240, 0, 0.45)';
+      } else if (b.status === 'warning') {
+        ctx.fillStyle = 'rgba(240, 180, 0, 0.35)'; // Yellow Warning
+        ctx.strokeStyle = 'rgba(240, 180, 0, 0.55)';
+      } else {
+        ctx.fillStyle = 'rgba(255, 60, 60, 0.45)'; // Red Tampered
+        ctx.strokeStyle = 'rgba(255, 60, 60, 0.65)';
+      }
+      ctx.lineWidth = 1;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+    }
+  }
+
+  return { overallScore, grid, renderHeatmap };
+}
+
+/**
  * Load an image file into a canvas and return ImageData + canvas
  */
 export function loadImageToCanvas(file) {
@@ -167,3 +263,4 @@ export function loadImageToCanvas(file) {
 export function canvasToBlob(canvas) {
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
+

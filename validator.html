@@ -2,16 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ghostmark — Validator</title>
+  <title>Ghostmark — Validator & Tamper Heatmap</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="stylesheet" href="/shared.css" />
+
+  <style>
+    /* Heatmap Overlay styling */
+    .heatmap-container {
+      position: relative;
+      margin-top: 16px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-2);
+      display: inline-block;
+      max-width: 100%;
+    }
+    .heatmap-img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+    .heatmap-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .heatmap-legend {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 11px;
+      font-family: var(--f-mono);
+      color: var(--text-2);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+    .legend-color.intact { background: rgba(200, 240, 0, 0.8); }
+    .legend-color.warning { background: rgba(240, 180, 0, 0.8); }
+    .legend-color.tampered { background: rgba(255, 60, 60, 0.8); }
+  </style>
 </head>
 <body>
 
 <nav class="nav">
   <div class="nav-brand"><span class="nav-brand-logo"><img src="/logo.svg" alt="Ghostmark Logo" width="22" height="22" /></span>Ghostmark</div>
   <ul class="nav-links">
+    <li><a href="/index.html">Home</a></li>
     <li><a href="/sentry.html">Sentry</a></li>
     <li><a href="/encoder.html">Encoder</a></li>
     <li><a href="/validator.html" class="active">Validator</a></li>
@@ -22,9 +71,9 @@
 
 <div class="page">
   <div class="page-header">
-    <p class="eyebrow">02 / Validate</p>
-    <h1 class="page-h1">Scan for a<em> hidden</em><br>watermark</h1>
-    <p class="page-lead">Upload any PNG to check if it contains an embedded Ghostmark payload. Results are deterministic — no false positives.</p>
+    <p class="eyebrow">02 / Validate & Inspect</p>
+    <h1 class="page-h1">Scan & inspect<em> image</em><br>integrity</h1>
+    <p class="page-lead">Upload any image to scan for embedded payloads and analyze pixel-level tamper integrity using the LSB bitplane heatmap inspector.</p>
   </div>
 
   <div class="val-grid">
@@ -43,21 +92,21 @@
 
       <div class="actions mt-16">
         <button class="btn btn-primary" id="scan-btn" disabled>
-          <span class="material-symbols-outlined">search</span>Scan Image
+          <span class="material-symbols-outlined">search</span>Scan & Inspect Image
         </button>
       </div>
     </div>
 
-    <!-- Right: result -->
+    <!-- Right: result & tamper heatmap -->
     <div>
       <div class="scan-idle" id="scan-idle">
         <span class="material-symbols-outlined">radar</span>
-        <p>Upload an image and press Scan to detect any embedded watermark.</p>
+        <p>Upload an image and press Scan to detect embedded watermarks and inspect pixel integrity.</p>
       </div>
 
       <div class="scan-running hidden" id="scan-running">
         <div class="spin-ring"></div>
-        <p>Scanning LSB channels…</p>
+        <p>Scanning LSB channels & analyzing bitplane integrity…</p>
       </div>
 
       <div class="payload-section hidden" id="result-section"></div>

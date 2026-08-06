@@ -63,7 +63,8 @@ Ghostmark is designed with a premium, Vercel-inspired **dark minimal aesthetic**
 ## ✨ Key Features
 
 - **👁️ 100% Invisible Signatures**: Zero visual degradation with 99.8%+ PSNR preservation.
-- **🛡️ Deterministic Verification**: Detects and extracts hidden payloads with 100% accuracy.
+- **🔍 Tamper Detection & Bit Heatmap Inspector**: Pixel-level LSB bitplane analysis that highlights intact watermark regions (Green) vs. edited/cropped/compressed areas (Red).
+- **🛡️ Deterministic Verification**: Detects and extracts hidden payloads with 100% accuracy and zero false positives.
 - **🔒 Privacy First**: All operations execute locally in memory—your photos never leave your device.
 - **⚡ Lossless PNG Export**: Automatically outputs lossless PNG files to preserve embedded bit structures indefinitely.
 
