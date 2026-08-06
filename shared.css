@@ -60,7 +60,7 @@ body::before {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.15;
+  opacity: 0.22;
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
