@@ -30,6 +30,49 @@
   --t:        0.15s ease;
 }
 
+/* ─────────────────────────────────────
+   CUSTOM RADAR CURSOR & SPOTLIGHT
+───────────────────────────────────── */
+@media (pointer: fine) {
+  body { cursor: default; }
+}
+
+.cursor-dot {
+  position: fixed; top: -4px; left: -4px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--lime);
+  pointer-events: none; z-index: 9999;
+  transition: transform 0.05s ease-out, background var(--t);
+  box-shadow: 0 0 10px var(--lime);
+}
+
+.cursor-ring {
+  position: fixed; top: -16px; left: -16px;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid rgba(200, 240, 0, 0.4);
+  pointer-events: none; z-index: 9998;
+  transition: width 0.2s ease, height 0.2s ease, top 0.2s ease, left 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.cursor-ring.active {
+  width: 48px; height: 48px;
+  top: -24px; left: -24px;
+  border-color: var(--lime);
+  background: rgba(200, 240, 0, 0.06);
+}
+
+.cursor-dot.active {
+  transform: scale(1.5);
+  background: #ffffff;
+}
+
+.cursor-spotlight {
+  position: fixed; top: -150px; left: -150px;
+  width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 240, 0, 0.04) 0%, rgba(200, 240, 0, 0.01) 40%, transparent 70%);
+  pointer-events: none; z-index: 9997;
+}
+
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--f-sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-decoration: none; }
 button { font-family: var(--f-sans); cursor: pointer; }
