@@ -1,92 +1,796 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ghostmark — Sentry</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghostmark — Invisible Watermarking</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <link rel="stylesheet" href="/shared.css" />
+
+  <style>
+    /* ── Intro canvas section ── */
+    #intro {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      background: #000;
+      flex-shrink: 0;
+    }
+    #stage {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+    /* Scroll cue */
+    #scroll-cue {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    #scroll-cue.visible { opacity: 1; }
+    #scroll-cue span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+    .cue-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(200,240,0,0.6), transparent);
+      animation: cue-pulse 1.8s ease infinite;
+    }
+    @keyframes cue-pulse {
+      0%, 100% { transform: scaleY(1); opacity: 1; }
+      50%       { transform: scaleY(0.4); opacity: 0.3; }
+    }
+
+    /* ── App landing section ── */
+    #app-section {
+      background: var(--bg);
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Hero */
+    .landing-hero {
+      padding: calc(var(--nav-h) + 72px) var(--pad) 80px;
+      max-width: calc(1140px + var(--pad) * 2);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    @media (max-width: 860px) { .landing-hero { grid-template-columns: 1fr; gap: 48px; } }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: var(--f-mono); font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--lime);
+      border: 1px solid rgba(200,240,0,0.25);
+      border-radius: 99px;
+      padding: 4px 12px;
+      margin-bottom: 24px;
+    }
+    .hero-pip { width: 5px; height: 5px; border-radius: 50%; background: var(--lime); animation: pip 2s ease infinite; }
+    @keyframes pip { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .hero-h1 {
+      font-family: var(--f-serif);
+      font-size: clamp(42px, 5.5vw, 68px);
+      font-weight: 400;
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .hero-h1 em { font-style: italic; color: var(--text-2); }
+
+    .hero-lead {
+      font-size: 15px; font-weight: 300;
+      color: var(--text-2); line-height: 1.7;
+      max-width: 420px; margin-bottom: 36px;
+    }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* Right feature list */
+    .hero-features { display: flex; flex-direction: column; gap: 0; }
+    .hero-feature {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-feature:first-child { border-top: 1px solid var(--border); }
+    .hf-num {
+      font-family: var(--f-mono); font-size: 11px;
+      color: var(--text-3); letter-spacing: 0.08em;
+      padding-top: 2px; flex-shrink: 0; width: 28px;
+    }
+    .hf-body {}
+    .hf-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .hf-desc  { font-size: 12px; color: var(--text-2); line-height: 1.6; }
+
+    /* Tech strip */
+    .tech-strip {
+      border-top: 1px solid var(--border);
+      padding: 32px var(--pad);
+      max-width: calc(1140px + var(--pad) * 2);
+      margin: 0 auto;
+      display: flex; align-items: center; gap: 32px; flex-wrap: wrap;
+    }
+    .tech-label { font-family: var(--f-mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase; }
+    .tech-tag {
+      font-family: var(--f-mono); font-size: 11px; color: var(--text-2);
+      background: var(--bg-2); border: 1px solid var(--border-2);
+      padding: 4px 10px; border-radius: 4px;
+    }
+
+    body { overflow-x: hidden; }
+    html { scroll-behavior: smooth; }
+  </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="nav-brand"><span class="nav-brand-pip"></span>Ghostmark</div>
-  <ul class="nav-links">
-    <li><a href="/index.html" class="active">Sentry</a></li>
-    <li><a href="/encoder.html">Encoder</a></li>
-    <li><a href="/validator.html">Validator</a></li>
-    <li><a href="/vault.html">Vault</a></li>
-  </ul>
-  <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
-</nav>
+<!-- ══════════════════════════════════════
+     INTRO — Full-screen canvas animation
+═══════════════════════════════════════ -->
+<section id="intro">
+  <canvas id="stage"></canvas>
+  <div id="scroll-cue">
+    <span>scroll to enter</span>
+    <div class="cue-line"></div>
+  </div>
+</section>
 
-<div class="page">
-  <div class="page-header">
-    <p class="eyebrow">Overview</p>
-    <h1 class="page-h1">Ghostmark<em> Sentry</em></h1>
-    <p class="page-lead">Invisible watermarking for images. Embed, verify, and track — without touching the visual quality.</p>
+<!-- ══════════════════════════════════════
+     APP — Landing page (revealed on scroll)
+═══════════════════════════════════════ -->
+<section id="app-section">
+  <nav class="nav">
+    <div class="nav-brand"><span class="nav-brand-pip"></span>Ghostmark</div>
+    <ul class="nav-links">
+      <li><a href="/index.html" class="active">Home</a></li>
+      <li><a href="/encoder.html">Encoder</a></li>
+      <li><a href="/validator.html">Validator</a></li>
+      <li><a href="/vault.html">Vault</a></li>
+    </ul>
+    <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
+  </nav>
+
+  <div class="landing-hero">
+    <!-- Left -->
+    <div>
+      <div class="hero-badge"><span class="hero-pip"></span>Invisible · Undetectable · Verifiable</div>
+      <h1 class="hero-h1">Your images.<br><em>Your signature.</em><br>Hidden in plain sight.</h1>
+      <p class="hero-lead">
+        Ghostmark embeds invisible watermarks directly into pixel data using LSB steganography. No visible change. Fully recoverable. Zero quality loss.
+      </p>
+      <div class="hero-actions">
+        <a href="/encoder.html" class="btn btn-primary">
+          <span class="material-symbols-outlined">lock</span>Start Encoding
+        </a>
+        <a href="/validator.html" class="btn btn-outline">
+          <span class="material-symbols-outlined">search</span>Validate an Image
+        </a>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="hero-features">
+      <div class="hero-feature">
+        <div class="hf-num">01</div>
+        <div class="hf-body">
+          <div class="hf-title">LSB Steganography</div>
+          <div class="hf-desc">Writes your payload into the 2 least significant bits of each R, G, B channel. Maximum shift of ±3 per pixel — imperceptible to human eyes.</div>
+        </div>
+      </div>
+      <div class="hero-feature">
+        <div class="hf-num">02</div>
+        <div class="hf-body">
+          <div class="hf-title">No visual degradation</div>
+          <div class="hf-desc">99.8% PSNR preserved. The watermarked image is visually identical to the original under any normal viewing condition.</div>
+        </div>
+      </div>
+      <div class="hero-feature">
+        <div class="hf-num">03</div>
+        <div class="hf-body">
+          <div class="hf-title">Deterministic verification</div>
+          <div class="hf-desc">Run any watermarked PNG through the Validator. The payload is extracted with 99.8% confidence — no false positives.</div>
+        </div>
+      </div>
+      <div class="hero-feature">
+        <div class="hf-num">04</div>
+        <div class="hf-body">
+          <div class="hf-title">Runs entirely in the browser</div>
+          <div class="hf-desc">No server. No uploads. Your images never leave your device. Canvas API + Web Crypto.</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-grid">
-    <div class="stat-cell">
-      <div class="stat-label">Encoded</div>
-      <div class="stat-val" id="s-enc">0</div>
-      <div class="stat-sub">images this session</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-label">Scanned</div>
-      <div class="stat-val" id="s-scan">0</div>
-      <div class="stat-sub">images this session</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-label">Verified</div>
-      <div class="stat-val" id="s-ver">0</div>
-      <div class="stat-sub">watermarks found</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-label">Visual delta</div>
-      <div class="stat-val">&lt;0.01%</div>
-      <div class="stat-sub">per channel · imperceptible</div>
-    </div>
+  <div class="tech-strip">
+    <span class="tech-label">Built with</span>
+    <span class="tech-tag">Vite</span>
+    <span class="tech-tag">Vanilla JS</span>
+    <span class="tech-tag">Canvas API</span>
+    <span class="tech-tag">LSB Steganography</span>
+    <span class="tech-tag">Zero dependencies</span>
   </div>
+</section>
 
-  <div class="rule"></div>
+<!-- ══════════════════════════════════════
+     ANIMATION ENGINE
+═══════════════════════════════════════ -->
+<script>
+(async function () {
+  const canvas = document.getElementById('stage');
+  const ctx    = canvas.getContext('2d');
+  const cue    = document.getElementById('scroll-cue');
 
-  <!-- Activity -->
-  <p class="eyebrow" style="margin-bottom:20px;">Activity</p>
-  <div id="activity-feed">
-    <div class="act-empty">No activity yet — encode or scan an image to see events here.</div>
-  </div>
+  /* ── Resize ── */
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
-  <div class="rule"></div>
+  /* ── Font load ── */
+  await document.fonts.ready;
 
-  <!-- How it works -->
-  <p class="eyebrow" style="margin-bottom:20px;">How it works</p>
-  <div class="how-grid">
-    <div class="how-cell">
-      <div class="how-n">01</div>
-      <div class="how-title">Upload</div>
-      <div class="how-desc">Any raster image — PNG, JPEG, WebP, BMP. Resolution doesn't matter.</div>
-    </div>
-    <div class="how-cell">
-      <div class="how-n">02</div>
-      <div class="how-title">Encode</div>
-      <div class="how-desc">Your text is written into the 2 least significant bits of each R, G, B channel. Max shift: ±3 per value.</div>
-    </div>
-    <div class="how-cell">
-      <div class="how-n">03</div>
-      <div class="how-title">Export PNG</div>
-      <div class="how-desc">Download as lossless PNG. The watermark survives indefinitely — JPEG recompression would destroy it.</div>
-    </div>
-    <div class="how-cell">
-      <div class="how-n">04</div>
-      <div class="how-title">Verify</div>
-      <div class="how-desc">Drop any watermarked PNG into the Validator. Your payload is extracted and displayed instantly.</div>
-    </div>
-  </div>
-</div>
+  /* ── Timeline (ms) ── */
+  const T = {
+    FADE_IN:      600,
+    WALK_START:   800,
+    WALK_END:     5000,
+    LOOK_START:   5000,
+    LOOK_END:     7200,
+    TURN_START:   7200,
+    TURN_END:     8400,
+    MARKER_START: 8400,
+    MARKER_END:   9200,
+    WRITE_START:  9200,
+    WRITE_END:    17500,
+    STEP_START:   17500,
+    STEP_END:     18600,
+    GUILT_START:  18600,
+    GUILT_END:    21000,
+    DONE:         21000,
+  };
 
-<script type="module" src="/sentry.js"></script>
+  const WRITE_TEXT  = 'GHOSTMARK';
+  const LETTER_DUR  = (T.WRITE_END - T.WRITE_START) / WRITE_TEXT.length;
+
+  let startTime = null;
+
+  /* ── Easing ── */
+  const ease   = t => t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
+  const linear = t => Math.max(0, Math.min(1, t));
+  function progress(elapsed, from, to) {
+    return linear((elapsed - from) / (to - from));
+  }
+
+  /* ── Draw shadow on floor ── */
+  function shadow(x, y, rx, ry, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* ── Draw the hooded character ── */
+  function drawCharacter(opts) {
+    const {
+      x, y, s,            // position & scale
+      walkPhase,           // 0..2π
+      facing,              // 1 = right, -1 = left (writing direction)
+      hunch,               // 0..1
+      eyeOffX, eyeOffY,    // eye look direction
+      armAngle,            // writing arm angle (deg)
+      showMarker,          // bool
+      headTurnBack,        // 0..1 (looking over shoulder)
+      markerAlpha,         // opacity of marker held
+    } = opts;
+
+    const bobY = Math.abs(Math.sin(walkPhase)) * 3 * s;
+    const hunchY = hunch * 12 * s;
+
+    ctx.save();
+    ctx.translate(x, y - bobY);
+    ctx.scale(facing, 1);
+
+    /* shadow */
+    ctx.save();
+    ctx.translate(0, 0);
+    ctx.scale(1, 0.15);
+    ctx.beginPath();
+    ctx.arc(0, 0, 28 * s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fill();
+    ctx.restore();
+
+    /* ── LEGS ── */
+    const leg1 = Math.sin(walkPhase) * 22;
+    const leg2 = -leg1;
+    const knee1 = -leg1 * 0.6;
+    const knee2 = -leg2 * 0.6;
+
+    function drawLeg(offsetX, thighAngle, kneeAngle) {
+      ctx.save();
+      ctx.translate(offsetX * s, -8 * s);
+
+      // Thigh
+      ctx.save();
+      ctx.rotate((thighAngle * Math.PI) / 180);
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.roundRect(-5 * s, 0, 10 * s, 44 * s, 3 * s);
+      ctx.fill();
+
+      // Calf
+      ctx.translate(0, 44 * s);
+      ctx.rotate((kneeAngle * Math.PI) / 180);
+      ctx.beginPath();
+      ctx.roundRect(-4 * s, 0, 8 * s, 40 * s, 3 * s);
+      ctx.fillStyle = '#0e0e0e';
+      ctx.fill();
+
+      // Foot
+      ctx.translate(0, 38 * s);
+      ctx.beginPath();
+      ctx.roundRect(-5 * s, 0, 18 * s * (facing), 7 * s, 3 * s);
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fill();
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    drawLeg(-8, leg1, knee1);
+    drawLeg(8, leg2, knee2);
+
+    /* ── TORSO ── */
+    ctx.save();
+    ctx.translate(0, -hunchY);
+
+    // Hoodie body
+    ctx.beginPath();
+    ctx.moveTo(-24 * s, -6 * s);
+    ctx.bezierCurveTo(-30 * s, -40 * s, -26 * s, -75 * s, -20 * s, -100 * s);
+    ctx.lineTo(-8  * s, -115 * s);
+    ctx.lineTo( 8  * s, -115 * s);
+    ctx.lineTo( 20 * s, -100 * s);
+    ctx.bezierCurveTo( 26 * s, -75 * s, 30 * s, -40 * s, 24 * s, -6 * s);
+    ctx.closePath();
+    ctx.fillStyle = '#111';
+    ctx.fill();
+
+    // Pocket crease
+    ctx.beginPath();
+    ctx.moveTo(-8 * s, -55 * s);
+    ctx.lineTo( 8 * s, -55 * s);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = s;
+    ctx.stroke();
+
+    /* ── ARMS ── */
+    const armSwing = Math.sin(walkPhase + Math.PI) * 18;
+    const armSwing2 = -armSwing;
+
+    // Non-writing arm (or both when not writing)
+    function drawArm(offsetX, angle, withMarker) {
+      ctx.save();
+      ctx.translate(offsetX * s, -95 * s);
+      ctx.rotate((angle * Math.PI) / 180);
+      ctx.fillStyle = '#0e0e0e';
+      ctx.beginPath();
+      ctx.roundRect(-5 * s, 0, 10 * s, 34 * s, 3 * s);
+      ctx.fill();
+
+      // Forearm
+      ctx.translate(0, 34 * s);
+      ctx.rotate(-angle * 0.3 * Math.PI / 180);
+      ctx.fillStyle = '#0a0a0a';
+      ctx.beginPath();
+      ctx.roundRect(-4 * s, 0, 8 * s, 28 * s, 3 * s);
+      ctx.fill();
+
+      // Hand
+      ctx.translate(0, 27 * s);
+      ctx.beginPath();
+      ctx.arc(0, 0, 5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#141414';
+      ctx.fill();
+
+      // Marker
+      if (withMarker) {
+        ctx.save();
+        ctx.globalAlpha = markerAlpha;
+        ctx.fillStyle = '#2a2a2a';
+        ctx.beginPath();
+        ctx.roundRect(-2.5 * s, 2 * s, 5 * s, 20 * s, 2 * s);
+        ctx.fill();
+        ctx.fillStyle = '#c8f000';
+        ctx.beginPath();
+        ctx.ellipse(0, 23 * s, 2 * s, 3 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // glow on tip
+        ctx.shadowColor = '#c8f000';
+        ctx.shadowBlur = 8 * s;
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    if (showMarker) {
+      // Left arm hangs back
+      drawArm(-22, armSwing + 10, false);
+      // Right arm writes
+      drawArm(22, armAngle, true);
+    } else {
+      drawArm(-22, armSwing + 10, false);
+      drawArm( 22, armSwing2 + 10, false);
+    }
+
+    /* ── HEAD ── */
+    ctx.save();
+    ctx.translate(0, -128 * s);
+
+    // Head turn for guilty look (only when character faces us)
+    const htRot = (facing === -1) ? headTurnBack * 0.55 : 0; // slight head turn back
+    ctx.rotate(htRot);
+
+    // Hood outer
+    ctx.beginPath();
+    ctx.arc(0, 0, 23 * s, 0, Math.PI * 2);
+    ctx.fillStyle = '#111';
+    ctx.fill();
+
+    // Hood peak
+    ctx.beginPath();
+    ctx.moveTo(-18 * s, -16 * s);
+    ctx.quadraticCurveTo(0, -46 * s, 18 * s, -16 * s);
+    ctx.closePath();
+    ctx.fillStyle = '#111';
+    ctx.fill();
+
+    // Inner shadow (face hidden in hood)
+    ctx.beginPath();
+    ctx.arc(0, 6 * s, 17 * s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.88)';
+    ctx.fill();
+
+    // Eyes
+    const ex = eyeOffX * 6 * s;
+    const ey = eyeOffY * 3 * s;
+
+    // When looking back over shoulder, only show one eye
+    const eyeGlow = headTurnBack > 0.4 ? 14 : 7;
+    const eyeAlpha = headTurnBack > 0.4 ? 1 : 0.9;
+
+    ctx.save();
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur  = eyeGlow * s;
+    ctx.globalAlpha = eyeAlpha;
+    ctx.fillStyle   = '#e8e8e8';
+
+    if (facing === 1 || headTurnBack < 0.7) {
+      // Both eyes
+      ctx.beginPath();
+      ctx.ellipse(-6.5 * s + ex, 4 * s + ey, 3.5 * s, 2.2 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.ellipse(6.5 * s + ex, 4 * s + ey, 3.5 * s, 2.2 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pupil (dark center — guilty narrow look)
+    ctx.shadowBlur  = 0;
+    ctx.fillStyle   = '#1a1a1a';
+    if (facing === 1 || headTurnBack < 0.7) {
+      ctx.beginPath();
+      ctx.ellipse(-6.5 * s + ex, 4 * s + ey, 1.5 * s, 1.5 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.ellipse(6.5 * s + ex, 4 * s + ey, 1.5 * s, 1.5 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    ctx.restore(); // head
+    ctx.restore(); // body/hunch offset
+    ctx.restore(); // character root
+  }
+
+  /* ── Draw written text on wall ── */
+  function drawWallText(elapsed) {
+    const W = canvas.width, H = canvas.height;
+    const fontSize = Math.min(W * 0.13, H * 0.22, 160);
+    ctx.font = `400 ${fontSize}px "DM Serif Display", Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const textY = H * 0.3;
+    const totalWidth = ctx.measureText(WRITE_TEXT).width;
+    let cx = W * 0.5 - totalWidth / 2;
+
+    // Draw each letter
+    for (let i = 0; i < WRITE_TEXT.length; i++) {
+      const letterStart = T.WRITE_START + i * LETTER_DUR;
+      const letterEnd   = letterStart + LETTER_DUR;
+
+      if (elapsed < letterStart) break;
+
+      // Local progress for this letter (0→1)
+      const lp = linear((elapsed - letterStart) / (LETTER_DUR * 0.6));
+
+      // Jitter while appearing
+      const appearing = lp < 0.5;
+      const jx = appearing ? (Math.random() - 0.5) * 4 * (1 - lp * 2) : 0;
+      const jy = appearing ? (Math.random() - 0.5) * 4 * (1 - lp * 2) : 0;
+
+      ctx.save();
+      ctx.globalAlpha = ease(lp);
+
+      // Glow
+      ctx.shadowColor = 'rgba(200, 240, 0, 0.7)';
+      ctx.shadowBlur  = 30 * lp;
+
+      ctx.fillStyle = '#c8f000';
+      const lw = ctx.measureText(WRITE_TEXT[i]).width;
+      ctx.fillText(WRITE_TEXT[i], cx + lw / 2 + jx, textY + jy);
+      ctx.restore();
+
+      cx += lw;
+    }
+  }
+
+  /* ── Ambient particles (subtle dust) ── */
+  const particles = Array.from({ length: 28 }, () => ({
+    x: Math.random(), y: Math.random(),
+    size: Math.random() * 1.2 + 0.3,
+    speed: Math.random() * 0.00015 + 0.00005,
+    alpha: Math.random() * 0.12 + 0.03,
+  }));
+
+  function drawParticles(elapsed) {
+    const W = canvas.width, H = canvas.height;
+    for (const p of particles) {
+      p.y -= p.speed;
+      if (p.y < 0) p.y = 1;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /* ── MAIN RENDER LOOP ── */
+  function render(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+
+    const W = canvas.width, H = canvas.height;
+    const s = H / 680; // responsive scale
+
+    /* Floor Y */
+    const floorY = H * 0.72;
+
+    /* Clear */
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    /* Fade in from black */
+    const fadeIn = linear(elapsed / T.FADE_IN);
+
+    /* Particles */
+    if (elapsed > 400) drawParticles(elapsed);
+
+    /* ── Character position ── */
+    let charX, charFacing, hunch, walkPhase;
+    let eyeOffX = 0, eyeOffY = 0;
+    let armAngle = -30, showMarker = false, markerAlpha = 0;
+    let headTurnBack = 0;
+
+    if (elapsed < T.WALK_START) {
+      /* Wait — character just barely visible at edge */
+      charX = -80 * s;
+      charFacing = 1;
+      hunch = 0.3;
+      walkPhase = 0;
+    }
+    else if (elapsed < T.WALK_END) {
+      /* Walk in */
+      const wp = ease(progress(elapsed, T.WALK_START, T.WALK_END));
+      const targetX = W * 0.46;
+      charX = -80 * s + (targetX + 80 * s) * wp;
+      charFacing = 1;
+      hunch = 0.4;
+      walkPhase = (elapsed - T.WALK_START) * 0.006;
+
+      // Occasionally look over shoulder
+      const lookCycle = Math.sin((elapsed - T.WALK_START) * 0.003);
+      eyeOffX = lookCycle * 0.6;
+      eyeOffY = -0.15;
+    }
+    else if (elapsed < T.LOOK_END) {
+      /* Stopped — looking around */
+      charX = W * 0.46;
+      charFacing = 1;
+      hunch = 0.55;
+      walkPhase = (elapsed - T.WALK_START) * 0.006;
+
+      const lookT = (elapsed - T.LOOK_START) / (T.LOOK_END - T.LOOK_START);
+      // Eyes dart: left → right → left
+      eyeOffX = Math.sin(lookT * Math.PI * 3.5) * 1.0;
+      eyeOffY = -0.1;
+    }
+    else if (elapsed < T.TURN_END) {
+      /* Turn to face wall */
+      const tp = ease(progress(elapsed, T.TURN_START, T.TURN_END));
+      charX = W * 0.46;
+      // Simulate turning by scaling x (squash)
+      charFacing = 1; // we handle with ctx.scale trick below
+      hunch = 0.6;
+      walkPhase = 0;
+      eyeOffX = 0; eyeOffY = 0;
+    }
+    else {
+      /* After turn: facing wall (facing = -1 means flipped) */
+      charX = W * 0.46;
+      charFacing = -1;
+      hunch = 0.65;
+      walkPhase = 0;
+      eyeOffX = 0.3; eyeOffY = 0;
+    }
+
+    /* Marker & arm */
+    if (elapsed >= T.MARKER_START && elapsed < T.WRITE_END) {
+      showMarker = true;
+      markerAlpha = ease(progress(elapsed, T.MARKER_START, T.MARKER_END));
+
+      // Arm sweeps across as letters are written
+      if (elapsed >= T.WRITE_START) {
+        const wp = progress(elapsed, T.WRITE_START, T.WRITE_END);
+        // Arm angle: starts at ~-60 (low), sweeps to -120 (high)
+        armAngle = -50 - wp * 40;
+      } else {
+        armAngle = -50;
+      }
+    }
+
+    /* Guilty look back */
+    if (elapsed >= T.GUILT_START) {
+      headTurnBack = ease(progress(elapsed, T.GUILT_START, T.GUILT_END));
+    }
+
+    /* Character step back */
+    if (elapsed >= T.STEP_START && elapsed < T.STEP_END) {
+      const sp = ease(progress(elapsed, T.STEP_START, T.STEP_END));
+      charX = W * 0.46 + sp * 28 * s;
+    } else if (elapsed >= T.STEP_END) {
+      charX = W * 0.46 + 28 * s;
+    }
+
+    /* Turn animation — squash/stretch in middle of turn */
+    let charScaleX = 1;
+    if (elapsed >= T.TURN_START && elapsed < T.TURN_END) {
+      const tp = progress(elapsed, T.TURN_START, T.TURN_END);
+      // Squash to 0 then expand back (mid-turn = facing us)
+      if (tp < 0.5) {
+        charScaleX = 1 - tp * 2;
+        charFacing = 1;
+      } else {
+        charScaleX = (tp - 0.5) * 2;
+        charFacing = -1;
+      }
+    }
+
+    /* ── Draw text on wall ── */
+    if (elapsed >= T.WRITE_START) {
+      drawWallText(elapsed);
+    }
+
+    /* ── Draw character ── */
+    ctx.save();
+    // Apply turn squash
+    if (charScaleX !== 1) {
+      ctx.translate(charX, 0);
+      ctx.scale(charScaleX, 1);
+      ctx.translate(-charX, 0);
+    }
+
+    drawCharacter({
+      x: charX,
+      y: floorY,
+      s,
+      walkPhase,
+      facing: charFacing,
+      hunch,
+      eyeOffX,
+      eyeOffY,
+      armAngle,
+      showMarker,
+      markerAlpha,
+      headTurnBack,
+    });
+    ctx.restore();
+
+    /* ── Floor line ── */
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, floorY);
+    ctx.lineTo(W, floorY);
+    ctx.stroke();
+    ctx.restore();
+
+    /* ── Global fade in ── */
+    if (elapsed < T.FADE_IN) {
+      ctx.fillStyle = `rgba(0,0,0,${1 - fadeIn})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    /* ── Vignette ── */
+    const vg = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.85);
+    vg.addColorStop(0, 'transparent');
+    vg.addColorStop(1, 'rgba(0,0,0,0.6)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    /* ── Scroll cue ── */
+    if (elapsed >= T.DONE) {
+      cue.classList.add('visible');
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+
+  /* ── Smooth scroll to app on any scroll ── */
+  const appSection = document.getElementById('app-section');
+  let scrolled = false;
+  window.addEventListener('wheel', () => {
+    if (!scrolled && performance.now() - startTime > 5000) {
+      scrolled = true;
+      appSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchstart', () => {
+    if (!scrolled && performance.now() - startTime > 5000) {
+      scrolled = true;
+      appSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, { passive: true });
+})();
+</script>
+
 </body>
 </html>

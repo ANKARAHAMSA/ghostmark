@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index:     'index.html',
+        sentry:    'sentry.html',
         encoder:   'encoder.html',
         validator: 'validator.html',
         vault:     'vault.html',
