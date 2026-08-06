@@ -40,7 +40,36 @@
   pointer-events: none; z-index: 9997;
 }
 
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--f-sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--f-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Translucent Dark Cyber Texture Overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('/bg-texture.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nav, .page, #app-section {
+  position: relative;
+  z-index: 1;
+}
 a { color: inherit; text-decoration: none; }
 button { font-family: var(--f-sans); cursor: pointer; }
 textarea, input { font-family: var(--f-mono); }
