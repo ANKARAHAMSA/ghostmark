@@ -7,7 +7,7 @@ const dz = $('drop-zone'), dzInner = $('dz-inner'), fi = $('file-input');
 const prevCanvas = $('preview-canvas');
 const scanBtn = $('scan-btn'), scanIdle = $('scan-idle'), scanRunning = $('scan-running'), resultSection = $('result-section');
 
-dz.addEventListener('click', () => fi.click());
+dz.addEventListener('click', () => { fi.value = ''; fi.click(); });
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('over'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); });
@@ -21,12 +21,19 @@ async function load(file) {
   currentCanvas = r.canvas;
 
   const pc = prevCanvas.getContext('2d');
-  prevCanvas.width = r.width; prevCanvas.height = r.height;
+  pc.clearRect(0, 0, prevCanvas.width, prevCanvas.height);
+  prevCanvas.width = r.width;
+  prevCanvas.height = r.height;
   pc.drawImage(r.canvas, 0, 0);
 
-  prevCanvas.classList.remove('hidden'); dzInner.classList.add('hidden');
+  fi.value = ''; // Clear file input value so selecting the same image or new image triggers change event every time
+  prevCanvas.classList.remove('hidden');
+  dzInner.classList.add('hidden');
   scanBtn.disabled = false;
-  scanIdle.classList.remove('hidden'); scanRunning.classList.add('hidden'); resultSection.classList.add('hidden'); resultSection.innerHTML = '';
+  scanIdle.classList.remove('hidden');
+  scanRunning.classList.add('hidden');
+  resultSection.classList.add('hidden');
+  resultSection.innerHTML = '';
 }
 
 scanBtn.addEventListener('click', async () => {

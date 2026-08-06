@@ -14,7 +14,7 @@ const resultArea = $('result-area'), cmpSection = $('compare-section');
 const origC = $('original-canvas'), outC = $('output-canvas');
 
 // Drop zone
-dz.addEventListener('click', () => fi.click());
+dz.addEventListener('click', () => { fi.value = ''; fi.click(); });
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('over'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); });
@@ -25,8 +25,11 @@ async function load(file) {
   const r = await loadImageToCanvas(file);
   imgData = r.imageData; origCanvas = r.canvas;
   const pc = prevCanvas.getContext('2d');
+  pc.clearRect(0, 0, prevCanvas.width, prevCanvas.height);
   prevCanvas.width = r.width; prevCanvas.height = r.height;
   pc.drawImage(r.canvas, 0, 0);
+
+  fi.value = ''; // Reset file input value
   prevCanvas.classList.remove('hidden'); dzInner.classList.add('hidden');
   dims.textContent = `${r.width}×${r.height}`;
   sz.textContent   = fmt(file.size);
