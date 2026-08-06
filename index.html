@@ -179,7 +179,7 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — Atmospheric Stage
+     INTRO — Clean Cinematic 3D Stage
 ═══════════════════════════════════════ -->
 <section id="intro">
   <canvas id="stage"></canvas>
@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     REALISTIC Locomotion Animation Engine
+     ANIMATION ENGINE
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,7 +272,7 @@
 
   await document.fonts.ready;
 
-  // TIMELINE (~8.5s)
+  // FAST & CLEAN TIMELINE (8.5 seconds total)
   const T = {
     FADE_IN:      300,
     WALK_START:   400,
@@ -311,6 +311,7 @@
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
+    // 3D Grid Lines on Floor
     ctx.save();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
@@ -349,12 +350,11 @@
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* Anisotropic Double-Jointed Realistic Human Kinematics */
+  /* Vector Character Holding Photo/Image Frame */
   function drawCharacter(opts) {
     const {
       x, y, s,
       walkPhase,
-      isWalking,
       facing,
       hunch,
       eyeOffX, eyeOffY,
@@ -362,83 +362,56 @@
       headTurnBack,
     } = opts;
 
-    // Realistic Gait Kinematics:
-    // Vertical hip bounce (double bounce per cycle at weight-transfer)
-    const hipVerticalBob = isWalking ? Math.sin(walkPhase * 2) * 3 * s : 0;
-    // Pelvic tilt / sway
-    const pelvicTilt = isWalking ? Math.cos(walkPhase) * 0.04 : 0;
-
+    const bobY = Math.abs(Math.sin(walkPhase)) * 4 * s;
     const hunchY = hunch * 14 * s;
 
     ctx.save();
-    ctx.translate(x, y + hipVerticalBob);
+    ctx.translate(x, y - bobY);
     ctx.scale(facing, 1);
 
-    // Dynamic Footprint Contact Shadow
+    // Floor Shadow
     ctx.save();
     ctx.scale(1, 0.2);
     ctx.beginPath();
-    ctx.arc(0, 0, (28 + Math.sin(walkPhase * 2) * 2) * s, 0, Math.PI * 2);
+    ctx.arc(0, 0, 28 * s, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fill();
     ctx.restore();
 
-    /* --- REALISTIC KNEE & HIP JOINTED LEGS --- */
-    // Contralateral gait angles
-    const phaseRad = walkPhase;
-    // Hip swing (-25 deg to +25 deg)
-    const hipAngle1 = isWalking ? Math.sin(phaseRad) * 0.45 : 0;
-    const hipAngle2 = isWalking ? -hipAngle1 : 0;
+    /* Legs */
+    const leg1 = Math.sin(walkPhase) * 22;
+    const leg2 = -leg1;
 
-    // Knee flexes ONLY during swing phase (when extending backward, knee is straight; when swinging forward, knee bends)
-    const kneeFlex1 = isWalking ? Math.max(0, Math.sin(phaseRad - 0.5)) * 0.7 : 0;
-    const kneeFlex2 = isWalking ? Math.max(0, Math.sin(phaseRad + Math.PI - 0.5)) * 0.7 : 0;
-
-    function drawRealisticLeg(offsetX, hipAngle, kneeAngle) {
+    function drawLeg(offsetX, thighAngle) {
       ctx.save();
       ctx.translate(offsetX * s, -10 * s);
-      ctx.rotate(hipAngle + pelvicTilt);
-
-      // Thigh (Femur)
+      ctx.rotate((thighAngle * Math.PI) / 180);
       ctx.fillStyle = '#111116';
       ctx.beginPath();
-      ctx.roundRect(-5.5 * s, 0, 11 * s, 26 * s, 4 * s);
+      ctx.roundRect(-5 * s, 0, 10 * s, 44 * s, 3 * s);
       ctx.fill();
 
-      // Knee Joint
-      ctx.translate(0, 24 * s);
-      ctx.rotate(kneeAngle);
-
-      // Calf (Tibia)
+      ctx.translate(0, 42 * s);
+      ctx.rotate((-thighAngle * 0.5 * Math.PI) / 180);
       ctx.fillStyle = '#0b0b0e';
       ctx.beginPath();
-      ctx.roundRect(-4.5 * s, 0, 9 * s, 26 * s, 3.5 * s);
+      ctx.roundRect(-4.5 * s, 0, 9 * s, 40 * s, 3 * s);
       ctx.fill();
 
-      // Ankle & Foot
-      ctx.translate(0, 24 * s);
-      ctx.rotate(-kneeAngle * 0.4 - hipAngle * 0.2); // Ankle leveling
-      ctx.fillStyle = '#060608';
+      ctx.translate(0, 36 * s);
       ctx.beginPath();
       ctx.roundRect(-5 * s, 0, 18 * s * facing, 7 * s, 3 * s);
+      ctx.fillStyle = '#060608';
       ctx.fill();
-
       ctx.restore();
     }
 
-    // Draw back leg first, then front leg
-    if (hipAngle1 < hipAngle2) {
-      drawRealisticLeg(-7, hipAngle1, kneeFlex1);
-      drawRealisticLeg(7, hipAngle2, kneeFlex2);
-    } else {
-      drawRealisticLeg(7, hipAngle2, kneeFlex2);
-      drawRealisticLeg(-7, hipAngle1, kneeFlex1);
-    }
+    drawLeg(-9, leg1);
+    drawLeg(9, leg2);
 
     /* Torso / Hoodie */
     ctx.save();
     ctx.translate(0, -hunchY);
-    ctx.rotate(-pelvicTilt * 0.5); // Counter-torso sway
 
     ctx.beginPath();
     ctx.moveTo(-24 * s, -6 * s);
@@ -451,31 +424,18 @@
     ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    /* --- REALISTIC SHOULDER & ELBOW ARMS --- */
-    // Natural Arm Swing (Opposite to Leg Swing: Right arm swings with Left Leg)
-    const armSwingAngle1 = isWalking ? -Math.sin(phaseRad) * 0.35 : 0;
-    const armSwingAngle2 = isWalking ? Math.sin(phaseRad) * 0.35 : 0;
-
-    // Left Arm (holding image card)
+    /* Left Arm (holding image card) */
+    const armSwing = Math.sin(walkPhase + Math.PI) * 14;
     ctx.save();
     ctx.translate(-22 * s, -96 * s);
-    ctx.rotate(armSwingAngle1 + 0.15);
-
-    // Upper arm
+    ctx.rotate(((armSwing + 15) * Math.PI) / 180);
     ctx.fillStyle = '#101014';
     ctx.beginPath();
-    ctx.roundRect(-5 * s, 0, 10 * s, 26 * s, 3.5 * s);
-    ctx.fill();
-
-    // Elbow joint & Forearm
-    ctx.translate(0, 24 * s);
-    ctx.rotate(0.35); // Subtle elbow bend
-    ctx.beginPath();
-    ctx.roundRect(-4.5 * s, 0, 9 * s, 24 * s, 3 * s);
+    ctx.roundRect(-5 * s, 0, 10 * s, 48 * s, 4 * s);
     ctx.fill();
 
     // Photo Card in Left Hand
-    ctx.translate(-3 * s, 22 * s);
+    ctx.translate(-4 * s, 44 * s);
     ctx.fillStyle = '#1e1e26';
     ctx.strokeStyle = '#c8f000';
     ctx.lineWidth = 1.5 * s;
@@ -502,30 +462,19 @@
     ctx.translate(22 * s, -96 * s);
 
     if (armProgress > 0) {
-      // Smooth raise to wall writing position
-      const armAngle = (armSwingAngle2 + 0.15) * (1 - armProgress) + (-2.2) * armProgress;
-      ctx.rotate(armAngle);
+      const armAngle = 10 * (1 - armProgress) + (-140) * armProgress;
+      ctx.rotate((armAngle * Math.PI) / 180);
     } else {
-      ctx.rotate(armSwingAngle2 + 0.15);
+      ctx.rotate(((-armSwing + 10) * Math.PI) / 180);
     }
 
-    // Upper arm
     ctx.fillStyle = '#121218';
     ctx.beginPath();
-    ctx.roundRect(-5 * s, 0, 10 * s, 26 * s, 3.5 * s);
-    ctx.fill();
-
-    // Elbow & Forearm
-    ctx.translate(0, 24 * s);
-    const elbowAngle = armProgress > 0 ? 0.6 : 0.3;
-    ctx.rotate(elbowAngle);
-
-    ctx.beginPath();
-    ctx.roundRect(-4.5 * s, 0, 9 * s, 24 * s, 3 * s);
+    ctx.roundRect(-5 * s, 0, 10 * s, 50 * s, 4 * s);
     ctx.fill();
 
     // Hand & Marker Pen
-    ctx.translate(0, 22 * s);
+    ctx.translate(0, 48 * s);
     ctx.fillStyle = '#1c1c24';
     ctx.beginPath();
     ctx.arc(0, 0, 5 * s, 0, Math.PI * 2);
@@ -535,7 +484,7 @@
     ctx.shadowColor = '#c8f000';
     ctx.shadowBlur = 8 * s;
     ctx.beginPath();
-    ctx.arc(0, 12 * s, 2.5 * s, 0, Math.PI * 2);
+    ctx.arc(0, 14 * s, 2.5 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
@@ -648,7 +597,7 @@
     drawEnvironment(W, H);
 
     /* Animation state */
-    let charX, charFacing = 1, hunch = 0.4, walkPhase = 0, isWalking = false;
+    let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
     let eyeOffX = 0, eyeOffY = 0;
     let armProgress = 0;
     let headTurnBack = 0;
@@ -656,10 +605,9 @@
     if (elapsed < T.WALK_START) {
       charX = -90 * s;
     } else if (elapsed < T.WALK_END) {
-      isWalking = true;
       const p = ease((elapsed - T.WALK_START) / (T.WALK_END - T.WALK_START));
       charX = -90 * s + (W * 0.48 + 90 * s) * p;
-      walkPhase = (elapsed - T.WALK_START) * 0.007; // Natural walking cadence
+      walkPhase = (elapsed - T.WALK_START) * 0.009;
       eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.005) * 0.5;
     } else if (elapsed < T.LOOK_END) {
       charX = W * 0.48;
@@ -702,13 +650,12 @@
       drawWallText(elapsed, textY);
     }
 
-    // 3. Draw Character with Realistic Joint Kinematics
+    // 3. Draw Character
     drawCharacter({
       x: charX,
       y: floorY,
       s,
       walkPhase,
-      isWalking,
       facing: charFacing,
       hunch,
       eyeOffX,
