@@ -1,0 +1,326 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Ghostmark Sentry Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#3a485c",
+                        "surface-container-lowest": "#0c0e12",
+                        "surface-bright": "#37393d",
+                        "tertiary-fixed-dim": "#b9c7e0",
+                        "surface-variant": "#323539",
+                        "primary": "#ffffff",
+                        "surface-container-highest": "#323539",
+                        "tertiary-fixed": "#d5e3fd",
+                        "primary-fixed-dim": "#b0d500",
+                        "on-secondary-fixed-variant": "#43474d",
+                        "on-secondary": "#2d3136",
+                        "on-primary-fixed-variant": "#3e4c00",
+                        "surface-container": "#1d2023",
+                        "outline-variant": "#444932",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#111417",
+                        "inverse-primary": "#536600",
+                        "on-tertiary": "#233144",
+                        "secondary-fixed": "#e0e2e9",
+                        "on-error": "#690005",
+                        "background": "#111417",
+                        "on-primary": "#2a3400",
+                        "inverse-on-surface": "#2e3134",
+                        "primary-fixed": "#caf300",
+                        "secondary-fixed-dim": "#c3c6cd",
+                        "on-primary-fixed": "#171e00",
+                        "on-tertiary-fixed": "#0d1c2f",
+                        "surface-container-high": "#282a2e",
+                        "inverse-surface": "#e1e2e7",
+                        "tertiary-container": "#d5e3fd",
+                        "primary-container": "#caf300",
+                        "on-tertiary-container": "#57657b",
+                        "on-secondary-fixed": "#181c21",
+                        "error-container": "#93000a",
+                        "outline": "#8f9378",
+                        "on-primary-container": "#596c00",
+                        "on-background": "#e1e2e7",
+                        "secondary": "#c3c6cd",
+                        "surface": "#111417",
+                        "secondary-container": "#43474d",
+                        "surface-tint": "#b0d500",
+                        "on-secondary-container": "#b2b5bc",
+                        "tertiary": "#ffffff",
+                        "on-surface": "#e1e2e7",
+                        "on-surface-variant": "#c5c9ac",
+                        "surface-container-low": "#191c1f",
+                        "error": "#ffb4ab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "unit": "4px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "display-lg": ["Geist"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-sm": ["Geist"],
+                        "headline-md": ["Geist"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .mist-bg {
+            background: radial-gradient(circle at 50% 50%, rgba(176, 213, 0, 0.05) 0%, transparent 60%);
+        }
+        .ghost-border {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-panel {
+            background-color: rgba(26, 30, 35, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        .scan-line {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(202, 243, 0, 0.5), transparent);
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+        
+        /* Thin animated vertical line */
+        .data-stream-v {
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(202, 243, 0, 0.3), transparent);
+            position: absolute;
+            animation: flowDown 8s linear infinite;
+        }
+        @keyframes flowDown {
+            0% { top: -100%; }
+            100% { top: 100%; }
+        }
+
+        .terminal-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+        }
+    </style>
+<script type="module" src="/main.js"></script></head>
+<body class="bg-[#05070a] text-on-surface min-h-screen font-body-md relative overflow-x-hidden">
+<!-- Atmospheric Mist & Data Streams -->
+<div class="fixed inset-0 pointer-events-none z-0 mist-bg"></div>
+<div class="fixed inset-0 pointer-events-none z-0">
+<div class="data-stream-v h-64 left-[15%]" style="animation-delay: 0s;"></div>
+<div class="data-stream-v h-96 left-[45%]" style="animation-delay: 2s;"></div>
+<div class="data-stream-v h-48 left-[85%]" style="animation-delay: 4s;"></div>
+</div>
+<!-- Layout Wrapper -->
+<div class="flex h-screen overflow-hidden relative z-10">
+<!-- SideNavBar -->
+<nav class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-surface-dim/80 dark:bg-surface-dim/80 backdrop-blur-2xl flex flex-col py-8 gap-8 z-40 hidden md:flex">
+<!-- Header -->
+<div class="px-6 flex items-center gap-3">
+<img alt="System Core" class="w-10 h-10 rounded-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgGtj8rhpvsQzyAsUemwz76lundNgfk2w7Usx817WBm3Rm-a6f_nXciw2_sxVIQAiIaB0nzSzWexlrDUn5UtHksVmN0rw4w3qf819itnYe7llrSf0vSnbDgoRMDMLFvkXk63_G3oTpPfrJ4qs6Dd8bL3JBv0cTrdJhfLUyV3J5GKEFNMpeoPqCVoQg3WNfDjjDrIuqXakjdaypivXPYsqOIwAoZFAN1zpIfCmvDqzw6ns1YERtk2Nv">
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary-fixed tracking-tighter">GHOSTMARK</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70">Liquid Intelligence v4.0</p>
+</div>
+</div>
+<!-- Tabs -->
+<ul class="flex-1 flex flex-col gap-2 mt-4">
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">code_blocks</span>
+                        Encoder
+                    </a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">fact_check</span>
+                        Validator
+                    </a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 font-label-md text-label-md text-primary-fixed border-l-2 border-primary-fixed bg-primary/5 transition-transform scale-[0.98]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; color: #caf300;">security</span>
+                        Sentry
+                    </a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">enhanced_encryption</span>
+                        Vault
+                    </a>
+</li>
+</ul>
+<!-- Footer & CTA -->
+<div class="px-4 flex flex-col gap-4 mt-auto">
+<button class="w-full py-3 bg-primary-fixed text-on-primary-fixed font-label-md text-label-md rounded-none shadow-[0_0_15px_rgba(202,243,0,0.3)] hover:shadow-[0_0_25px_rgba(202,243,0,0.6)] transition-all duration-300">
+                    DEPLOY AGENT
+                </button>
+<div class="flex flex-col gap-2 pt-4 border-t border-white/10">
+<a class="flex items-center gap-3 px-2 py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[18px]">menu_book</span> Documentation
+                    </a>
+<a class="flex items-center gap-3 px-2 py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[18px]">terminal</span> Terminal
+                    </a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 flex flex-col h-screen overflow-y-auto overflow-x-hidden">
+<!-- TopAppBar (Mobile Fallback / Desktop Header) -->
+<header class="w-full top-0 sticky border-b border-white/10 bg-surface/60 dark:bg-surface/60 backdrop-blur-xl flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 z-40">
+<div class="flex items-center gap-4">
+<div class="md:hidden">
+<span class="material-symbols-outlined text-primary-fixed text-2xl">menu</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">Sentry Analytics</h2>
+<div class="flex items-center gap-2 mt-1">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-pulse shadow-[0_0_8px_#caf300]"></span>
+<span class="font-label-sm text-label-sm text-primary-fixed uppercase tracking-widest">Live Monitoring</span>
+</div>
+</div>
+</div>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed transition-colors duration-300 cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed transition-colors duration-300 cursor-pointer">sensors</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed transition-colors duration-300 cursor-pointer">settings</span>
+<img class="w-10 h-10 rounded-full border border-white/10 ml-2 object-cover" data-alt="A hyper-realistic minimalist profile avatar portrait of a chief network architect. Moody, cinematic lighting with a dark background. The subject is vaguely silhouetted but has a subtle Ethereal Lime rim light on their profile. The aesthetic is serious, professional, and slightly mysterious, fitting a high-end cybersecurity boutique. High contrast, sharp focus, obsidian tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMN47d0siRIQbGJhyiP0aYzoHkyfY3K5tpRr1iZsSYo8-SUoTFr_v8g2ieG_0cV2NmGQFjc8tUNUQbtkL-18g2P6sRh9LOjYcfRVshojyKZOTcSOB-4PLiggi-2WhAHzkMNr8G8Bq0rzdMOTZ_L_9e6kpnzfQGNXIlyOt0Iqw7UzntUH0jcAEtBIatyREfn73rDnHLtj8mTyJhOqmwqOsU2QSmQyGIKP6qyCT9v7rn_PNVTAjOe3XE">
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="flex-1 p-margin-mobile md:p-margin-desktop">
+<div class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Global Resilience Map (Hero Span) -->
+<div class="col-span-1 md:col-span-8 glass-panel ghost-border rounded-[24px] p-6 relative overflow-hidden min-h-[400px] flex flex-col justify-between group">
+<div class="absolute inset-0 z-0 opacity-40 mix-blend-screen" data-alt="A stylized, glowing digital map of the world visualized through a dark data-stream aesthetic. The continents are composed of microscopic, luminous Ethereal Lime data points and fine wireframe lines against an obsidian black void. Occasional intense bright spots indicate network activity. Minimalist, premium, glassmorphic UI feel, conveying global intelligence tracking in a dark mode environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDMn-GzETr2w5VwJyDQhhsJDxMuKoA2mzPJAtyOt2T-jtXSfK_R1OB-DqWhRSNfKuyI3rgswAGhLnVG3mcwuztbzvFZvwK-hr8swAK8Ndmnfq4RAbANZV0O2xWj0ZWU70fOaH7hoVQFKmZSf0HZtoEP5QiLd5Giq9qlN1yDJJqKNcmF3OEFBgEGu2ucDVn0Pna1YdUW8PssUvmTnJox1ShXKG76juuB9stuRrCi_-ASlcIAsKwbobnN')"></div>
+<div class="relative z-10 flex justify-between items-start">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Global Threat Topography</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Real-time vector tracing across 42 active nodes.</p>
+</div>
+<div class="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-sm border border-white/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-label-md text-primary-fixed">public</span>
+<span class="font-label-md text-label-md text-on-surface">ALL ZONES ACTIVE</span>
+</div>
+</div>
+<div class="relative z-10 flex gap-6 mt-auto self-end bg-surface-container-low/50 backdrop-blur-lg p-4 rounded-xl border border-white/5">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1 uppercase">Hotspot</p>
+<p class="font-label-md text-label-md text-on-surface">AP-NORTHEAST-2 (Seoul)</p>
+</div>
+<div class="w-px bg-white/10"></div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1 uppercase">Vector</p>
+<p class="font-label-md text-label-md text-error">SSIM Compression</p>
+</div>
+</div>
+</div>
+<!-- Threat Intelligence Feed -->
+<div class="col-span-1 md:col-span-4 glass-panel ghost-border rounded-[24px] p-6 flex flex-col h-full max-h-[400px]">
+<div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-4">
+<span class="material-symbols-outlined text-primary-fixed">terminal</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Intelligence Feed</h3>
+</div>
+<div class="flex-1 overflow-y-auto terminal-scroll pr-2 space-y-4">
+<div class="border-l-2 border-error pl-3 py-1">
+<p class="font-label-sm text-label-sm text-error/80 mb-1">ERR_CRIT • 14:02:11 UTC</p>
+<p class="font-label-md text-label-md text-on-surface font-mono">SSIM Compression Attack detected in Seoul. Nullifying payload.</p>
+</div>
+<div class="border-l-2 border-primary-fixed pl-3 py-1">
+<p class="font-label-sm text-label-sm text-primary-fixed/80 mb-1">SYS_INF • 13:59:45 UTC</p>
+<p class="font-label-md text-label-md text-on-surface font-mono">Validator Node EU-Central synced. Latency: 12ms.</p>
+</div>
+<div class="border-l-2 border-surface-variant pl-3 py-1">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">SYS_LOG • 13:45:00 UTC</p>
+<p class="font-label-md text-label-md text-on-surface-variant font-mono">Routine background scrape completed. 0 anomalies.</p>
+</div>
+<div class="border-l-2 border-outline pl-3 py-1">
+<p class="font-label-sm text-label-sm text-outline-variant mb-1">WARN_LV1 • 13:12:05 UTC</p>
+<p class="font-label-md text-label-md text-on-surface font-mono">Elevated traffic at edge node US-East. Monitoring.</p>
+</div>
+</div>
+</div>
+<!-- Resilience Metrics (HUD Style) -->
+<div class="col-span-1 md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-gutter mt-4">
+<!-- Metric 1 -->
+<div class="glass-panel ghost-border rounded-[24px] p-6 relative group overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-fixed opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2 flex items-center justify-between">
+                                Attack Resistance Score <span class="material-symbols-outlined text-[16px]">shield_locked</span>
+</p>
+<div class="flex items-end gap-3">
+<h4 class="font-display-lg text-display-lg text-on-surface">99.8<span class="text-headline-sm text-on-surface-variant">%</span></h4>
+<span class="text-primary-fixed font-label-sm text-label-sm flex items-center pb-2">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> 0.2%
+                                </span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="glass-panel ghost-border rounded-[24px] p-6 relative group overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-surface-variant opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2 flex items-center justify-between">
+                                Global Latency <span class="material-symbols-outlined text-[16px]">speed</span>
+</p>
+<div class="flex items-end gap-3">
+<h4 class="font-display-lg text-display-lg text-on-surface">14<span class="text-headline-sm text-on-surface-variant">ms</span></h4>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center pb-2">
+                                    Avg Ping
+                                </span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="glass-panel ghost-border rounded-[24px] p-6 relative group overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-fixed opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2 flex items-center justify-between">
+                                Active Sentry Nodes <span class="material-symbols-outlined text-[16px]">share_location</span>
+</p>
+<div class="flex items-end gap-3">
+<h4 class="font-display-lg text-display-lg text-on-surface">2,419</h4>
+<div class="flex gap-1 pb-2">
+<span class="w-1.5 h-6 bg-primary-fixed/20 rounded-sm"></span>
+<span class="w-1.5 h-6 bg-primary-fixed/40 rounded-sm"></span>
+<span class="w-1.5 h-6 bg-primary-fixed/80 rounded-sm"></span>
+<span class="w-1.5 h-6 bg-primary-fixed rounded-sm"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>
