@@ -30,7 +30,7 @@
       height: 100vh;
       width: 100%;
       overflow: hidden;
-      background: #08080a;
+      background: #050507;
       flex-shrink: 0;
     }
     #stage {
@@ -179,7 +179,7 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — Clean Cinematic Stage
+     INTRO — 3D Atmospheric Stage
 ═══════════════════════════════════════ -->
 <section id="intro">
   <canvas id="stage"></canvas>
@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     CLEAN ANIMATION ENGINE
+     ANIMATION ENGINE
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -300,33 +300,61 @@
   const ease   = t => t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
   const linear = t => Math.max(0, Math.min(1, t));
 
-  /* Clean Dark Room Atmosphere (No dots, no grid lines) */
-  function drawAtmosphere(W, H) {
+  /* 3D Perspective Grid & Floor (Subtle & Sleek - No Sparkles) */
+  function drawEnvironment(W, H) {
+    const horizonY = H * 0.44;
+
+    // Background gradient
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#060608');
-    bgGrad.addColorStop(0.5, '#0b0b0e');
-    bgGrad.addColorStop(1, '#040406');
+    bgGrad.addColorStop(0, '#040406');
+    bgGrad.addColorStop(0.44, '#08080c');
+    bgGrad.addColorStop(1, '#020204');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Subtle dark wall floor crease
-    const floorY = H * 0.76;
+    // 3D Grid Lines on Floor
+    ctx.save();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
+
+    // Horizon Line
     ctx.beginPath();
-    ctx.moveTo(0, floorY);
-    ctx.lineTo(W, floorY);
+    ctx.moveTo(0, horizonY);
+    ctx.lineTo(W, horizonY);
     ctx.stroke();
 
-    // Soft spotlight on the wall
-    const spot = ctx.createRadialGradient(W * 0.5, H * 0.35, 10, W * 0.5, H * 0.35, W * 0.4);
-    spot.addColorStop(0, 'rgba(200, 240, 0, 0.04)');
+    // Perspective Lines towards Vanishing Point
+    const vpX = W * 0.5;
+    const vpY = horizonY;
+    const lines = 20;
+    for (let i = 0; i <= lines; i++) {
+      const targetX = (i / lines) * W * 1.8 - W * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(vpX, vpY);
+      ctx.lineTo(targetX, H);
+      ctx.stroke();
+    }
+
+    // Horizontal Perspective Grid Lines
+    const hLines = 10;
+    for (let j = 1; j <= hLines; j++) {
+      const py = horizonY + Math.pow(j / hLines, 2) * (H - horizonY);
+      ctx.beginPath();
+      ctx.moveTo(0, py);
+      ctx.lineTo(W, py);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Ambient Spotlight
+    const spot = ctx.createRadialGradient(W * 0.5, H * 0.35, 10, W * 0.5, H * 0.35, W * 0.35);
+    spot.addColorStop(0, 'rgba(200, 240, 0, 0.03)');
     spot.addColorStop(1, 'transparent');
     ctx.fillStyle = spot;
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* Sleek Vector Character */
+  /* Vector Character Holding Photo/Image Frame */
   function drawCharacter(opts) {
     const {
       x, y, s,
@@ -345,12 +373,12 @@
     ctx.translate(x, y - bobY);
     ctx.scale(facing, 1);
 
-    // Soft shadow on floor
+    // Floor Shadow
     ctx.save();
     ctx.scale(1, 0.2);
     ctx.beginPath();
     ctx.arc(0, 0, 28 * s, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fill();
     ctx.restore();
 
@@ -402,23 +430,45 @@
     ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    /* Left Arm */
+    /* Left Arm (holding image frame in hand) */
     const armSwing = Math.sin(walkPhase + Math.PI) * 14;
     ctx.save();
     ctx.translate(-22 * s, -96 * s);
-    ctx.rotate(((armSwing + 10) * Math.PI) / 180);
+    ctx.rotate(((armSwing + 15) * Math.PI) / 180);
     ctx.fillStyle = '#101014';
     ctx.beginPath();
-    ctx.roundRect(-5 * s, 0, 10 * s, 54 * s, 4 * s);
+    ctx.roundRect(-5 * s, 0, 10 * s, 48 * s, 4 * s);
     ctx.fill();
-    ctx.restore();
 
-    /* Right Arm (Writing arm) */
+    // Photo / Image Card in Left Hand!
+    ctx.translate(-4 * s, 44 * s);
+    ctx.fillStyle = '#1e1e26';
+    ctx.strokeStyle = '#c8f000';
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath();
+    ctx.roundRect(-12 * s, -8 * s, 24 * s, 18 * s, 2 * s);
+    ctx.fill();
+    ctx.stroke();
+
+    // Miniature image inner detail (landscape/mountains icon)
+    ctx.fillStyle = 'rgba(200, 240, 0, 0.4)';
+    ctx.beginPath();
+    ctx.arc(-3 * s, -2 * s, 3 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-10 * s, 7 * s);
+    ctx.lineTo(-2 * s, -1 * s);
+    ctx.lineTo(4 * s, 7 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore(); // Left arm
+
+    /* Right Arm (Writing / Projecting Watermark arm) */
     ctx.save();
     ctx.translate(22 * s, -96 * s);
 
     if (armProgress > 0) {
-      // Arm raises UP cleanly towards wall writing level
       const armAngle = 10 * (1 - armProgress) + (-140) * armProgress;
       ctx.rotate((armAngle * Math.PI) / 180);
     } else {
@@ -430,7 +480,7 @@
     ctx.roundRect(-5 * s, 0, 10 * s, 50 * s, 4 * s);
     ctx.fill();
 
-    // Hand & Marker
+    // Hand & Marker Pen
     ctx.translate(0, 48 * s);
     ctx.fillStyle = '#1c1c24';
     ctx.beginPath();
@@ -469,7 +519,7 @@
     ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    // Hood Inner Shadow (Dark Face Void)
+    // Hood Inner Shadow (Dark Void)
     ctx.beginPath();
     ctx.arc(0, 6 * s, 17 * s, 0, Math.PI * 2);
     ctx.fillStyle = '#050507';
@@ -555,8 +605,8 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    // 1. Dark Atmosphere
-    drawAtmosphere(W, H);
+    // 1. Atmosphere with 3D Grid Floor (Subtle monochrome lines)
+    drawEnvironment(W, H);
 
     /* Animation state */
     let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
@@ -612,7 +662,7 @@
       drawWallText(elapsed, textY);
     }
 
-    // 3. Draw Character
+    // 3. Draw Character (holding photo image in hand)
     drawCharacter({
       x: charX,
       y: floorY,
