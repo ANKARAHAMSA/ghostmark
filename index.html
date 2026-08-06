@@ -179,7 +179,7 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — Fast Cinematic 3D Stage
+     INTRO — Fast Scene, Smooth Normal Eye Motion
 ═══════════════════════════════════════ -->
 <section id="intro">
   <canvas id="stage"></canvas>
@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     FAST ANIMATION ENGINE (~4.5 SECONDS TOTAL)
+     ANIMATION ENGINE (Normal Smooth Eye Motion)
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,23 +272,23 @@
 
   await document.fonts.ready;
 
-  // ULTRA FAST TIMELINE (~4.5 SECONDS TOTAL)
+  // FAST SCENE TIMELINE (~4.5 SECONDS TOTAL)
   const T = {
     FADE_IN:      200,
     WALK_START:   200,
-    WALK_END:     1400, // Walk in in 1.2s
+    WALK_END:     1400,
     LOOK_START:   1400,
-    LOOK_END:     1800, // Look around 0.4s
+    LOOK_END:     1800,
     TURN_START:   1800,
-    TURN_END:     2100, // Turn 0.3s
+    TURN_END:     2100,
     RAISE_START:  2100,
-    RAISE_END:    2400, // Raise arm 0.3s
+    RAISE_END:    2400,
     WRITE_START:  2400,
-    WRITE_END:    3600, // Rapid write 1.2s
+    WRITE_END:    3600,
     STEP_START:   3600,
-    STEP_END:     4000, // Step back 0.4s
+    STEP_END:     4000,
     GUILT_START:  4000,
-    GUILT_END:    4500, // Guilty glance 0.5s
+    GUILT_END:    4500,
     DONE:         4500,
   };
 
@@ -516,7 +516,7 @@
     ctx.fillStyle = '#050507';
     ctx.fill();
 
-    // Eyes
+    // Normal Smooth Human Eye Motion
     const ex = eyeOffX * 6 * s;
     const ey = eyeOffY * 3 * s;
 
@@ -608,13 +608,15 @@
     } else if (elapsed < T.WALK_END) {
       const p = ease((elapsed - T.WALK_START) / (T.WALK_END - T.WALK_START));
       charX = -90 * s + (W * 0.48 + 90 * s) * p;
-      walkPhase = (elapsed - T.WALK_START) * 0.016; // Fast brisk walking cadence
-      eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.01) * 0.5;
+      walkPhase = (elapsed - T.WALK_START) * 0.016;
+      // Normal smooth eye glance speed during walking
+      eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.004) * 0.6;
     } else if (elapsed < T.LOOK_END) {
       charX = W * 0.48;
       hunch = 0.55;
       const p = (elapsed - T.LOOK_START) / (T.LOOK_END - T.LOOK_START);
-      eyeOffX = Math.sin(p * Math.PI * 3) * 0.9;
+      // Smooth natural eye sweep
+      eyeOffX = Math.sin(p * Math.PI * 1.5) * 0.8;
     } else if (elapsed < T.TURN_END) {
       const p = (elapsed - T.TURN_START) / (T.TURN_END - T.TURN_START);
       charX = W * 0.48;
