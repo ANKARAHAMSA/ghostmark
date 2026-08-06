@@ -30,8 +30,20 @@
       height: 100vh;
       width: 100%;
       overflow: hidden;
-      background: #050507;
+      background: transparent;
       flex-shrink: 0;
+    }
+    /* Seamless Bottom Blend Gradient Mask */
+    #intro::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      background: linear-gradient(to bottom, transparent 0%, rgba(5, 5, 7, 0.85) 100%);
+      pointer-events: none;
+      z-index: 5;
     }
     #stage {
       display: block;
@@ -305,9 +317,9 @@
     const horizonY = H * 0.44;
 
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#040406');
-    bgGrad.addColorStop(0.44, '#08080c');
-    bgGrad.addColorStop(1, '#020204');
+    bgGrad.addColorStop(0, 'rgba(4, 4, 6, 0.7)');
+    bgGrad.addColorStop(0.44, 'rgba(8, 8, 12, 0.55)');
+    bgGrad.addColorStop(1, 'rgba(2, 2, 4, 0.2)');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
