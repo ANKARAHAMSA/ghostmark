@@ -186,21 +186,22 @@ export function analyzeImageIntegrity(imageData, hasWatermark = false) {
 
       let status = 'intact';
       if (hasWatermark) {
+        // When watermark is embedded, test for payload integrity
         if (score > 0.65) {
-          status = 'intact';
+          status = 'intact'; // Green: Authentic Watermark Payload
           intactBlocks++;
         } else if (score > 0.4) {
-          status = 'warning';
+          status = 'warning'; // Yellow: Minor Bit Noise
         } else {
-          status = 'tampered';
+          status = 'tampered'; // Red: Tampered / Stripped Region
         }
       } else {
-        // Without watermark signature
-        if (score > 0.75) {
-          status = 'intact';
+        // Unwatermarked image: test for lossy compression / noise artifacts
+        if (score < 0.65) {
+          status = 'tampered'; // Red: High Compression / Artifact Noise
           intactBlocks++;
         } else {
-          status = 'tampered';
+          status = 'neutral'; // Dark: Clean unwatermarked pixel region
         }
       }
 
@@ -217,14 +218,17 @@ export function analyzeImageIntegrity(imageData, hasWatermark = false) {
 
     for (const b of grid) {
       if (b.status === 'intact') {
-        ctx.fillStyle = 'rgba(200, 240, 0, 0.28)'; // Lime Intact
+        ctx.fillStyle = 'rgba(200, 240, 0, 0.28)'; // Lime Intact Watermark
         ctx.strokeStyle = 'rgba(200, 240, 0, 0.45)';
       } else if (b.status === 'warning') {
-        ctx.fillStyle = 'rgba(240, 180, 0, 0.35)'; // Yellow Warning
+        ctx.fillStyle = 'rgba(240, 180, 0, 0.35)'; // Yellow Minor Noise
         ctx.strokeStyle = 'rgba(240, 180, 0, 0.55)';
-      } else {
-        ctx.fillStyle = 'rgba(255, 60, 60, 0.45)'; // Red Tampered
+      } else if (b.status === 'tampered') {
+        ctx.fillStyle = 'rgba(255, 60, 60, 0.45)'; // Red Compression / Tamper Noise
         ctx.strokeStyle = 'rgba(255, 60, 60, 0.65)';
+      } else {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; // Neutral Unwatermarked Pixel Block
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       }
       ctx.lineWidth = 1;
       ctx.fillRect(b.x, b.y, b.w, b.h);

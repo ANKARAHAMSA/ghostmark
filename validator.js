@@ -146,12 +146,13 @@ scanBtn.addEventListener('click', async () => {
       </div>
 
       <div class="payload-meta" style="margin-bottom:16px;">
-        <div><div class="payload-meta-val">${integrity.overallScore}%</div><div class="payload-meta-key">Bitplane Score</div></div>
+        <div><div class="payload-meta-val">0%</div><div class="payload-meta-key">Watermark Coverage</div></div>
         <div><div class="payload-meta-val">${imgPixels.toLocaleString()}</div><div class="payload-meta-key">Pixels Scanned</div></div>
+        <div><div class="payload-meta-val">Clean</div><div class="payload-meta-key">Status</div></div>
       </div>
 
       <p style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:14px;">
-        No Ghostmark signature found in this image. It may be unwatermarked, or altered by lossy compression.
+        No Ghostmark signature found in this image. It is a standard unwatermarked image or has lost low-order bit data due to JPEG compression.
       </p>
 
       <button class="btn btn-outline" id="toggle-heatmap-btn" style="width: 100%;">
@@ -159,14 +160,14 @@ scanBtn.addEventListener('click', async () => {
       </button>
 
       <div class="heatmap-section hidden" id="heatmap-view">
-        <p class="eyebrow" style="margin-top:16px; margin-bottom:6px;">Bitplane Integrity Inspection</p>
+        <p class="eyebrow" style="margin-top:16px; margin-bottom:6px;">Bitplane Noise & Compression Inspection</p>
         <div class="heatmap-container" id="hm-box">
           <img src="${currentCanvas.toDataURL()}" class="heatmap-img" />
           <canvas id="hm-canvas" class="heatmap-canvas"></canvas>
         </div>
         <div class="heatmap-legend">
-          <div class="legend-item"><span class="legend-color intact"></span>Intact LSB Structure</div>
-          <div class="legend-item"><span class="legend-color tampered"></span>Compression / Edited Noise</div>
+          <div class="legend-item"><span class="legend-color neutral" style="background:rgba(255,255,255,0.2);"></span>Unwatermarked Standard Pixel</div>
+          <div class="legend-item"><span class="legend-color tampered"></span>Compression / Bit Noise Region</div>
         </div>
       </div>
     `;
