@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     ANIMATION ENGINE
+     ANIMATION ENGINE WITH LOGO STAMP
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,24 +272,26 @@
 
   await document.fonts.ready;
 
-  // FAST & CLEAN TIMELINE (8.5 seconds total)
+  // ANIMATION TIMELINE WITH LOGO STAMP (~9.5 seconds)
   const T = {
     FADE_IN:      300,
     WALK_START:   400,
     WALK_END:     2400,
     LOOK_START:   2400,
-    LOOK_END:     3200,
-    TURN_START:   3200,
-    TURN_END:     3800,
-    RAISE_START:  3800,
-    RAISE_END:    4400,
-    WRITE_START:  4400,
-    WRITE_END:    6800,
-    STEP_START:   6800,
-    STEP_END:     7300,
-    GUILT_START:  7300,
-    GUILT_END:    8500,
-    DONE:         8500,
+    LOOK_END:     3100,
+    TURN_START:   3100,
+    TURN_END:     3600,
+    RAISE_START:  3600,
+    RAISE_END:    4200,
+    WRITE_START:  4200,
+    WRITE_END:    6600,
+    STAMP_START:  6600,
+    STAMP_IMPACT: 7100,
+    STEP_START:   7400,
+    STEP_END:     8000,
+    GUILT_START:  8000,
+    GUILT_END:    9400,
+    DONE:         9400,
   };
 
   const WRITE_TEXT = 'GHOSTMARK';
@@ -300,11 +302,10 @@
   const ease   = t => t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
   const linear = t => Math.max(0, Math.min(1, t));
 
-  /* 3D Perspective Grid & Floor (Subtle & Sleek - No Sparkles) */
+  /* 3D Perspective Grid & Floor */
   function drawEnvironment(W, H) {
     const horizonY = H * 0.44;
 
-    // Background gradient
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
     bgGrad.addColorStop(0, '#040406');
     bgGrad.addColorStop(0.44, '#08080c');
@@ -317,13 +318,11 @@
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
 
-    // Horizon Line
     ctx.beginPath();
     ctx.moveTo(0, horizonY);
     ctx.lineTo(W, horizonY);
     ctx.stroke();
 
-    // Perspective Lines towards Vanishing Point
     const vpX = W * 0.5;
     const vpY = horizonY;
     const lines = 20;
@@ -335,7 +334,6 @@
       ctx.stroke();
     }
 
-    // Horizontal Perspective Grid Lines
     const hLines = 10;
     for (let j = 1; j <= hLines; j++) {
       const py = horizonY + Math.pow(j / hLines, 2) * (H - horizonY);
@@ -346,7 +344,7 @@
     }
     ctx.restore();
 
-    // Ambient Spotlight
+    // Spotlight
     const spot = ctx.createRadialGradient(W * 0.5, H * 0.35, 10, W * 0.5, H * 0.35, W * 0.35);
     spot.addColorStop(0, 'rgba(200, 240, 0, 0.03)');
     spot.addColorStop(1, 'transparent');
@@ -354,7 +352,7 @@
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* Vector Character Holding Photo/Image Frame */
+  /* Vector Character */
   function drawCharacter(opts) {
     const {
       x, y, s,
@@ -363,6 +361,7 @@
       hunch,
       eyeOffX, eyeOffY,
       armProgress,
+      stampProgress,
       headTurnBack,
     } = opts;
 
@@ -395,7 +394,6 @@
       ctx.roundRect(-5 * s, 0, 10 * s, 44 * s, 3 * s);
       ctx.fill();
 
-      // Lower leg
       ctx.translate(0, 42 * s);
       ctx.rotate((-thighAngle * 0.5 * Math.PI) / 180);
       ctx.fillStyle = '#0b0b0e';
@@ -403,7 +401,6 @@
       ctx.roundRect(-4.5 * s, 0, 9 * s, 40 * s, 3 * s);
       ctx.fill();
 
-      // Foot
       ctx.translate(0, 36 * s);
       ctx.beginPath();
       ctx.roundRect(-5 * s, 0, 18 * s * facing, 7 * s, 3 * s);
@@ -430,7 +427,7 @@
     ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    /* Left Arm (holding image frame in hand) */
+    /* Left Arm (holding image card) */
     const armSwing = Math.sin(walkPhase + Math.PI) * 14;
     ctx.save();
     ctx.translate(-22 * s, -96 * s);
@@ -440,7 +437,7 @@
     ctx.roundRect(-5 * s, 0, 10 * s, 48 * s, 4 * s);
     ctx.fill();
 
-    // Photo / Image Card in Left Hand!
+    // Photo Card in Left Hand
     ctx.translate(-4 * s, 44 * s);
     ctx.fillStyle = '#1e1e26';
     ctx.strokeStyle = '#c8f000';
@@ -450,7 +447,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Miniature image inner detail (landscape/mountains icon)
     ctx.fillStyle = 'rgba(200, 240, 0, 0.4)';
     ctx.beginPath();
     ctx.arc(-3 * s, -2 * s, 3 * s, 0, Math.PI * 2);
@@ -464,11 +460,15 @@
 
     ctx.restore(); // Left arm
 
-    /* Right Arm (Writing / Projecting Watermark arm) */
+    /* Right Arm (Writing / Stamping arm) */
     ctx.save();
     ctx.translate(22 * s, -96 * s);
 
-    if (armProgress > 0) {
+    if (stampProgress > 0) {
+      // Stamping action angle (slamming forward to wall)
+      const stampAngle = -140 + Math.sin(stampProgress * Math.PI) * 35;
+      ctx.rotate((stampAngle * Math.PI) / 180);
+    } else if (armProgress > 0) {
       const armAngle = 10 * (1 - armProgress) + (-140) * armProgress;
       ctx.rotate((armAngle * Math.PI) / 180);
     } else {
@@ -480,7 +480,7 @@
     ctx.roundRect(-5 * s, 0, 10 * s, 50 * s, 4 * s);
     ctx.fill();
 
-    // Hand & Marker Pen
+    // Hand & Stamp Tool
     ctx.translate(0, 48 * s);
     ctx.fillStyle = '#1c1c24';
     ctx.beginPath();
@@ -491,7 +491,7 @@
     ctx.shadowColor = '#c8f000';
     ctx.shadowBlur = 8 * s;
     ctx.beginPath();
-    ctx.arc(0, 14 * s, 2.5 * s, 0, Math.PI * 2);
+    ctx.arc(0, 14 * s, 3 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
@@ -505,13 +505,11 @@
       ctx.rotate(-headTurnBack * 0.55);
     }
 
-    // Hood Outer
     ctx.beginPath();
     ctx.arc(0, 0, 24 * s, 0, Math.PI * 2);
     ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    // Hood Peak
     ctx.beginPath();
     ctx.moveTo(-18 * s, -16 * s);
     ctx.quadraticCurveTo(0, -46 * s, 18 * s, -16 * s);
@@ -519,13 +517,12 @@
     ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    // Hood Inner Shadow (Dark Void)
     ctx.beginPath();
     ctx.arc(0, 6 * s, 17 * s, 0, Math.PI * 2);
     ctx.fillStyle = '#050507';
     ctx.fill();
 
-    // Guilty Eyes
+    // Eyes
     const ex = eyeOffX * 6 * s;
     const ey = eyeOffY * 3 * s;
 
@@ -542,7 +539,6 @@
     ctx.ellipse(6.5 * s + ex, 4 * s + ey, 3.8 * s, 2.2 * s, 0.1, 0, Math.PI * 2);
     ctx.fill();
 
-    // Pupils
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#111116';
     ctx.beginPath();
@@ -558,8 +554,54 @@
     ctx.restore(); // Root
   }
 
-  /* Clean Glowing Wall Text */
-  function drawWallText(elapsed, textY) {
+  /* Draw Ghostmark Shield Emblem Logo Stamp */
+  function drawGhostmarkLogoStamp(ctx, x, y, size, opacity, glowIntensity) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(size / 24, size / 24);
+    ctx.globalAlpha = opacity;
+
+    ctx.shadowColor = '#c8f000';
+    ctx.shadowBlur = glowIntensity;
+
+    // Shield/Ghost outline
+    ctx.beginPath();
+    // Path: M12 2C7.58 2 4 5.58 4 10V18C4 19.65 5.34 21 7 21C7.88 21 8.67 20.61 9.21 20.01C9.84 19.3 10.84 19 11.78 19.21L12 19.25L12.21 19.21C13.15 19 14.15 19.3 14.78 20.01C15.32 20.61 16.11 21 17 21C18.65 21 20 19.65 20 18V10C20 5.58 16.41 2 12 2Z
+    ctx.moveTo(0, -10);
+    ctx.bezierCurveTo(-4.42, -10, -8, -6.42, -8, -2);
+    ctx.lineTo(-8, 6);
+    ctx.bezierCurveTo(-8, 7.65, -6.66, 9, -5, 9);
+    ctx.bezierCurveTo(-4.12, 9, -3.33, 8.61, -2.79, 8.01);
+    ctx.bezierCurveTo(-2.16, 7.3, -1.16, 7, -0.22, 7.21);
+    ctx.lineTo(0, 7.25);
+    ctx.lineTo(0.22, 7.21);
+    ctx.bezierCurveTo(1.16, 7, 2.16, 7.3, 2.79, 8.01);
+    ctx.bezierCurveTo(3.33, 8.61, 4.12, 9, 5, 9);
+    ctx.bezierCurveTo(6.66, 9, 8, 7.65, 8, 6);
+    ctx.lineTo(8, -2);
+    ctx.bezierCurveTo(8, -6.42, 4.42, -10, 0, -10);
+    ctx.closePath();
+
+    ctx.fillStyle = 'rgba(20, 20, 28, 0.9)';
+    ctx.fill();
+    ctx.strokeStyle = '#c8f000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Glowing Eyes inside Logo Stamp
+    ctx.fillStyle = '#c8f000';
+    ctx.beginPath();
+    ctx.arc(-3, -2, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(3, -2, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* Draw Wall Text & Logo Stamp at the end */
+  function drawWallTextAndStamp(elapsed, textY) {
     const W = canvas.width, H = canvas.height;
     const fontSize = Math.min(W * 0.12, H * 0.20, 140);
     ctx.font = `400 ${fontSize}px "DM Serif Display", Georgia, serif`;
@@ -567,7 +609,9 @@
     ctx.textBaseline = 'middle';
 
     const totalWidth = ctx.measureText(WRITE_TEXT).width;
-    let cx = W * 0.5 - totalWidth / 2;
+    const stampWidth = fontSize * 0.85;
+    const totalWidthWithStamp = totalWidth + stampWidth + 24;
+    let cx = W * 0.5 - totalWidthWithStamp / 2;
 
     for (let i = 0; i < WRITE_TEXT.length; i++) {
       const letterStart = T.WRITE_START + i * LETTER_DUR;
@@ -580,7 +624,6 @@
       ctx.save();
       ctx.globalAlpha = ease(lp);
 
-      // Clean glowing text
       ctx.shadowColor = '#c8f000';
       ctx.shadowBlur  = 24 * lp;
       ctx.fillStyle   = '#c8f000';
@@ -589,6 +632,24 @@
       ctx.restore();
 
       cx += lw;
+    }
+
+    // STAMP ANIMATION AT THE END OF WRITING
+    if (elapsed >= T.STAMP_START) {
+      const stampX = cx + stampWidth / 2 + 18;
+      const stampProgress = linear((elapsed - T.STAMP_START) / (T.STAMP_IMPACT - T.STAMP_START));
+
+      // Impact Pop effect
+      let scale = stampWidth;
+      let opacity = ease(stampProgress);
+      let glow = 20;
+
+      if (elapsed >= T.STAMP_IMPACT) {
+        const afterImpact = (elapsed - T.STAMP_IMPACT) / 400;
+        glow = 25 + Math.sin(afterImpact * Math.PI) * 15;
+      }
+
+      drawGhostmarkLogoStamp(ctx, stampX, textY, scale, opacity, glow);
     }
   }
 
@@ -605,13 +666,13 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    // 1. Atmosphere with 3D Grid Floor (Subtle monochrome lines)
+    // 1. Atmosphere with 3D Floor Grid
     drawEnvironment(W, H);
 
     /* Animation state */
     let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
     let eyeOffX = 0, eyeOffY = 0;
-    let armProgress = 0;
+    let armProgress = 0, stampProgress = 0;
     let headTurnBack = 0;
 
     if (elapsed < T.WALK_START) {
@@ -636,11 +697,16 @@
       charFacing = -1;
       hunch = 0.65;
       armProgress = linear((elapsed - T.RAISE_START) / (T.RAISE_END - T.RAISE_START));
+    } else if (elapsed < T.STEP_START) {
+      charX = W * 0.48;
+      charFacing = -1;
+      hunch = 0.65;
+      stampProgress = linear((elapsed - T.STAMP_START) / (T.STAMP_IMPACT - T.STAMP_START));
     } else if (elapsed < T.GUILT_END) {
       const p = linear((elapsed - T.STEP_START) / (T.STEP_END - T.STEP_START));
       charX = W * 0.48 + p * 36 * s;
       charFacing = -1;
-      armProgress = Math.max(0, 1 - (elapsed - T.WRITE_END) / 800);
+      armProgress = Math.max(0, 1 - (elapsed - T.STEP_START) / 600);
       headTurnBack = ease(linear((elapsed - T.GUILT_START) / (T.GUILT_END - T.GUILT_START)));
       eyeOffX = 0.85;
       eyeOffY = -0.1;
@@ -657,12 +723,12 @@
       }
     }
 
-    // 2. Draw Wall Text
+    // 2. Draw Text & Logo Stamp
     if (elapsed >= T.WRITE_START) {
-      drawWallText(elapsed, textY);
+      drawWallTextAndStamp(elapsed, textY);
     }
 
-    // 3. Draw Character (holding photo image in hand)
+    // 3. Draw Character
     drawCharacter({
       x: charX,
       y: floorY,
@@ -673,6 +739,7 @@
       eyeOffX,
       eyeOffY,
       armProgress,
+      stampProgress,
       headTurnBack,
     });
 
@@ -718,6 +785,5 @@
   updateNavVisibility();
 </script>
 
-<script type="module" src="/cursor.js"></script>
 </body>
 </html>
