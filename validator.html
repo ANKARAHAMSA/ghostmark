@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghostmark — Validator</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="stylesheet" href="/shared.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand"><span class="nav-brand-pip"></span>Ghostmark</div>
+  <ul class="nav-links">
+    <li><a href="/index.html">Sentry</a></li>
+    <li><a href="/encoder.html">Encoder</a></li>
+    <li><a href="/validator.html" class="active">Validator</a></li>
+    <li><a href="/vault.html">Vault</a></li>
+  </ul>
+  <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <p class="eyebrow">02 / Validate</p>
+    <h1 class="page-h1">Scan for a<em> hidden</em><br>watermark</h1>
+    <p class="page-lead">Upload any PNG to check if it contains an embedded Ghostmark payload. Results are deterministic — no false positives.</p>
+  </div>
+
+  <div class="val-grid">
+    <!-- Left: upload + scan -->
+    <div>
+      <div class="dropzone" id="drop-zone">
+        <div class="dz-inner" id="dz-inner">
+          <span class="material-symbols-outlined dz-icon">image_search</span>
+          <p class="dz-title">Drop watermarked image</p>
+          <p class="dz-sub">or click to browse</p>
+          <p class="dz-fmt">PNG · JPEG · WebP · BMP</p>
+        </div>
+        <canvas id="preview-canvas" class="preview-canvas hidden"></canvas>
+        <input type="file" id="file-input" accept="image/*" />
+      </div>
+
+      <div class="actions mt-16">
+        <button class="btn btn-primary" id="scan-btn" disabled>
+          <span class="material-symbols-outlined">search</span>Scan Image
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: result -->
+    <div>
+      <div class="scan-idle" id="scan-idle">
+        <span class="material-symbols-outlined">radar</span>
+        <p>Upload an image and press Scan to detect any embedded watermark.</p>
+      </div>
+
+      <div class="scan-running hidden" id="scan-running">
+        <div class="spin-ring"></div>
+        <p>Scanning LSB channels…</p>
+      </div>
+
+      <div class="payload-section hidden" id="result-section"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/validator.js"></script>
+</body>
+</html>
