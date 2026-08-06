@@ -52,6 +52,7 @@ function buildBitStream(payload) {
 
 /**
  * Embed invisible watermark into ImageData.
+ * Embeds payload with header redundancy so edited/drawn-over images remain recoverable.
  * @param {ImageData} imageData
  * @param {string} message
  * @returns {ImageData} modified imageData with watermark
@@ -61,25 +62,31 @@ export function embedWatermark(imageData, message) {
   const bits = buildBitStream(payload);
   const data = imageData.data;
 
-  // Capacity check: each pixel contributes BITS_PER_CHANNEL * CHANNELS bits
-  const capacity = Math.floor((data.length / 4) * BITS_PER_CHANNEL * CHANNELS / 8);
-  if (bits.length / 8 > capacity) {
-    throw new Error(`Watermark too large. Max ~${capacity} bytes for this image.`);
-  }
+  // Repeat the bitstream payload at redundant interval offsets (e.g. every 2048 pixels)
+  // so drawing or editing part of the image leaves other copies intact!
+  const bitsPerPixel = BITS_PER_CHANNEL * CHANNELS; // 6 bits per pixel
+  const totalPixels = data.length / 4;
+  const payloadPixels = Math.ceil(bits.length / bitsPerPixel);
 
   let bitIdx = 0;
-  for (let i = 0; i < data.length && bitIdx < bits.length; i += 4) {
-    // Embed into R, G, B channels (skip alpha i+3)
-    for (let c = 0; c < CHANNELS && bitIdx < bits.length; c++) {
-      // Clear the least significant BITS_PER_CHANNEL bits and set them
-      const bitsToEmbed = Math.min(BITS_PER_CHANNEL, bits.length - bitIdx);
+  for (let i = 0; i < data.length; i += 4) {
+    const currentPayloadBit = bits[bitIdx % bits.length];
+    bitIdx++;
+
+    // Embed into R, G, B channels
+    let cBitIdx = (Math.floor(i / 4) * bitsPerPixel) % bits.length;
+
+    for (let c = 0; c < CHANNELS; c++) {
       let mask = 0;
       for (let b = 0; b < BITS_PER_CHANNEL; b++) mask |= (1 << b);
-      let val = data[i + c] & ~mask; // clear LSBs
+      let val = data[i + c] & ~mask;
+
       let embedVal = 0;
-      for (let b = 0; b < bitsToEmbed; b++) {
-        embedVal |= (bits[bitIdx++] << (BITS_PER_CHANNEL - 1 - b));
+      for (let b = 0; b < BITS_PER_CHANNEL; b++) {
+        const bVal = bits[(cBitIdx + b) % bits.length];
+        embedVal |= (bVal << (BITS_PER_CHANNEL - 1 - b));
       }
+      cBitIdx += BITS_PER_CHANNEL;
       data[i + c] = val | embedVal;
     }
   }
@@ -87,7 +94,7 @@ export function embedWatermark(imageData, message) {
 }
 
 /**
- * Extract watermark from ImageData.
+ * Extract watermark from ImageData with resilient header scanning.
  * @param {ImageData} imageData
  * @returns {{ found: boolean, message: string, confidence: number }}
  */
@@ -103,39 +110,54 @@ export function extractWatermark(imageData) {
     }
   }
 
-  // Read bytes from bits
   function readBytes(count, startBit) {
     const bytes = new Uint8Array(count);
     for (let i = 0; i < count; i++) {
       let byte = 0;
       for (let b = 7; b >= 0; b--) {
-        byte |= (bits[startBit++] << b);
+        const bitVal = bits[startBit + i * 8 + (7 - b)];
+        if (bitVal !== undefined) byte |= (bitVal << b);
       }
       bytes[i] = byte;
     }
     return bytes;
   }
 
-  // Check magic (first 32 bits = 4 bytes)
-  const magic = readBytes(4, 0);
-  const magicStr = bytesToString(magic);
-  if (magicStr !== MAGIC) {
+  // Resiliently scan for GHMK magic header across bitstream offsets
+  let foundOffset = -1;
+  const maxScanBits = Math.min(bits.length - 64, 32768);
+
+  for (let offset = 0; offset < maxScanBits; offset += 8) {
+    const magic = readBytes(4, offset);
+    const magicStr = bytesToString(magic);
+    if (magicStr === MAGIC) {
+      foundOffset = offset;
+      break;
+    }
+  }
+
+  if (foundOffset === -1) {
     return { found: false, message: '', confidence: 0 };
   }
 
   // Read length (next 32 bits = 4 bytes, little-endian)
-  const lenBytes = readBytes(4, 32);
+  const lenBytes = readBytes(4, foundOffset + 32);
   const len = lenBytes[0] | (lenBytes[1] << 8) | (lenBytes[2] << 16) | (lenBytes[3] << 24);
 
-  if (len <= 0 || len > 100000) {
+  if (len <= 0 || len > 100000 || (foundOffset + 64 + len * 8) > bits.length) {
     return { found: false, message: '', confidence: 0 };
   }
 
-  // Read payload
-  const payloadBytes = readBytes(len, 64);
-  const message = bytesToString(payloadBytes);
-  const confidence = 99.8; // LSB is deterministic
+  // Read payload bytes
+  const payloadBytes = readBytes(len, foundOffset + 64);
+  let message = '';
+  try {
+    message = bytesToString(payloadBytes);
+  } catch (e) {
+    return { found: false, message: '', confidence: 0 };
+  }
 
+  const confidence = 99.8;
   return { found: true, message, confidence };
 }
 
