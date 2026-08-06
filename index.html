@@ -179,7 +179,7 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — Clean Cinematic 3D Stage
+     INTRO — Fast Cinematic 3D Stage
 ═══════════════════════════════════════ -->
 <section id="intro">
   <canvas id="stage"></canvas>
@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     ANIMATION ENGINE
+     FAST ANIMATION ENGINE (~4.5 SECONDS TOTAL)
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,24 +272,24 @@
 
   await document.fonts.ready;
 
-  // FAST & CLEAN TIMELINE (8.5 seconds total)
+  // ULTRA FAST TIMELINE (~4.5 SECONDS TOTAL)
   const T = {
-    FADE_IN:      300,
-    WALK_START:   400,
-    WALK_END:     2400,
-    LOOK_START:   2400,
-    LOOK_END:     3200,
-    TURN_START:   3200,
-    TURN_END:     3800,
-    RAISE_START:  3800,
-    RAISE_END:    4400,
-    WRITE_START:  4400,
-    WRITE_END:    6800,
-    STEP_START:   6800,
-    STEP_END:     7300,
-    GUILT_START:  7300,
-    GUILT_END:    8500,
-    DONE:         8500,
+    FADE_IN:      200,
+    WALK_START:   200,
+    WALK_END:     1400, // Walk in in 1.2s
+    LOOK_START:   1400,
+    LOOK_END:     1800, // Look around 0.4s
+    TURN_START:   1800,
+    TURN_END:     2100, // Turn 0.3s
+    RAISE_START:  2100,
+    RAISE_END:    2400, // Raise arm 0.3s
+    WRITE_START:  2400,
+    WRITE_END:    3600, // Rapid write 1.2s
+    STEP_START:   3600,
+    STEP_END:     4000, // Step back 0.4s
+    GUILT_START:  4000,
+    GUILT_END:    4500, // Guilty glance 0.5s
+    DONE:         4500,
   };
 
   const WRITE_TEXT = 'GHOSTMARK';
@@ -311,7 +311,6 @@
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // 3D Grid Lines on Floor
     ctx.save();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
@@ -350,7 +349,7 @@
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* Vector Character Holding Photo/Image Frame */
+  /* Vector Character */
   function drawCharacter(opts) {
     const {
       x, y, s,
@@ -391,6 +390,7 @@
       ctx.roundRect(-5 * s, 0, 10 * s, 44 * s, 3 * s);
       ctx.fill();
 
+      // Lower leg
       ctx.translate(0, 42 * s);
       ctx.rotate((-thighAngle * 0.5 * Math.PI) / 180);
       ctx.fillStyle = '#0b0b0e';
@@ -398,6 +398,7 @@
       ctx.roundRect(-4.5 * s, 0, 9 * s, 40 * s, 3 * s);
       ctx.fill();
 
+      // Foot
       ctx.translate(0, 36 * s);
       ctx.beginPath();
       ctx.roundRect(-5 * s, 0, 18 * s * facing, 7 * s, 3 * s);
@@ -562,7 +563,7 @@
       const letterStart = T.WRITE_START + i * LETTER_DUR;
       if (elapsed < letterStart) break;
 
-      const lp = linear((elapsed - letterStart) / (LETTER_DUR * 0.6));
+      const lp = linear((elapsed - letterStart) / (LETTER_DUR * 0.5));
       const lw = ctx.measureText(WRITE_TEXT[i]).width;
       const letterCenterX = cx + lw / 2;
 
@@ -607,8 +608,8 @@
     } else if (elapsed < T.WALK_END) {
       const p = ease((elapsed - T.WALK_START) / (T.WALK_END - T.WALK_START));
       charX = -90 * s + (W * 0.48 + 90 * s) * p;
-      walkPhase = (elapsed - T.WALK_START) * 0.009;
-      eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.005) * 0.5;
+      walkPhase = (elapsed - T.WALK_START) * 0.016; // Fast brisk walking cadence
+      eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.01) * 0.5;
     } else if (elapsed < T.LOOK_END) {
       charX = W * 0.48;
       hunch = 0.55;
@@ -628,7 +629,7 @@
       const p = linear((elapsed - T.STEP_START) / (T.STEP_END - T.STEP_START));
       charX = W * 0.48 + p * 36 * s;
       charFacing = -1;
-      armProgress = Math.max(0, 1 - (elapsed - T.WRITE_END) / 800);
+      armProgress = Math.max(0, 1 - (elapsed - T.WRITE_END) / 400);
       headTurnBack = ease(linear((elapsed - T.GUILT_START) / (T.GUILT_END - T.GUILT_START)));
       eyeOffX = 0.85;
       eyeOffY = -0.1;
