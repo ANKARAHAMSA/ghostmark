@@ -30,10 +30,10 @@
       height: 100vh;
       width: 100%;
       overflow: hidden;
-      background: #050505;
+      background: #040406;
       flex-shrink: 0;
     }
-    #stage3d {
+    #stage {
       display: block;
       width: 100%;
       height: 100%;
@@ -62,7 +62,7 @@
       font-size: 11px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: rgba(200, 240, 0, 0.8);
+      color: rgba(200, 240, 0, 0.85);
     }
     .cue-line {
       width: 1px;
@@ -164,7 +164,7 @@
 <body>
 
 <!-- ══════════════════════════════════════
-     NAV BAR (Initially hidden during 3D intro)
+     NAV BAR (Hidden during intro)
 ═══════════════════════════════════════ -->
 <nav class="nav nav-hidden" id="main-nav">
   <div class="nav-brand"><span class="nav-brand-pip"></span>Ghostmark</div>
@@ -179,10 +179,10 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — 3D Scene
+     INTRO — 3D Atmospheric Animation Stage
 ═══════════════════════════════════════ -->
 <section id="intro">
-  <canvas id="stage3d"></canvas>
+  <canvas id="stage"></canvas>
   <div id="scroll-cue">
     <span>scroll to enter ↓</span>
     <div class="cue-line"></div>
@@ -246,26 +246,529 @@
 
   <div class="tech-strip">
     <span class="tech-label">Built with</span>
-    <span class="tech-tag">Three.js</span>
     <span class="tech-tag">Vite</span>
     <span class="tech-tag">Vanilla JS</span>
     <span class="tech-tag">Canvas API</span>
     <span class="tech-tag">LSB Steganography</span>
+    <span class="tech-tag">Zero dependencies</span>
   </div>
 </section>
 
-<!-- 3D Landing Animation -->
-<script type="module" src="/landing3d.js"></script>
+<!-- ══════════════════════════════════════
+     ANIMATION ENGINE
+═══════════════════════════════════════ -->
+<script>
+(async function () {
+  const canvas = document.getElementById('stage');
+  const ctx    = canvas.getContext('2d');
+  const cue    = document.getElementById('scroll-cue');
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  await document.fonts.ready;
+
+  // FAST & IMPACTFUL TIMELINE (~10 seconds total)
+  const T = {
+    FADE_IN:      400,
+    WALK_START:   500,
+    WALK_END:     2800,
+    LOOK_START:   2800,
+    LOOK_END:     3800,
+    TURN_START:   3800,
+    TURN_END:     4500,
+    RAISE_START:  4500,
+    RAISE_END:    5200,
+    WRITE_START:  5200,
+    WRITE_END:    8200,
+    STEP_START:   8200,
+    STEP_END:     8800,
+    GUILT_START:  8800,
+    GUILT_END:    10200,
+    DONE:         10200,
+  };
+
+  const WRITE_TEXT = 'GHOSTMARK';
+  const LETTER_DUR = (T.WRITE_END - T.WRITE_START) / WRITE_TEXT.length;
+
+  let startTime = null;
+
+  const ease   = t => t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
+  const linear = t => Math.max(0, Math.min(1, t));
+
+  /* 3D Perspective Grid & Floor */
+  function draw3DEnvironment(ctx, W, H, elapsed) {
+    const horizonY = H * 0.42;
+
+    // Background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#030305');
+    bgGrad.addColorStop(0.42, '#08080d');
+    bgGrad.addColorStop(1, '#020204');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // 3D Wall Light Spotlight
+    const spotX = W * 0.5;
+    const spotY = horizonY - 40;
+    const spotGrad = ctx.createRadialGradient(spotX, spotY, 20, spotX, spotY, W * 0.45);
+    spotGrad.addColorStop(0, 'rgba(200, 240, 0, 0.07)');
+    spotGrad.addColorStop(0.5, 'rgba(200, 240, 0, 0.02)');
+    spotGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = spotGrad;
+    ctx.fillRect(0, 0, W, horizonY + 50);
+
+    // 3D Perspective Floor Grid
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200, 240, 0, 0.08)';
+    ctx.lineWidth = 1;
+
+    // Horizon Line
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY);
+    ctx.lineTo(W, horizonY);
+    ctx.stroke();
+
+    // Vanishing point perspective lines
+    const vpX = W * 0.5;
+    const vpY = horizonY;
+    const lines = 24;
+    for (let i = 0; i <= lines; i++) {
+      const targetX = (i / lines) * W * 2 - W * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(vpX, vpY);
+      ctx.lineTo(targetX, H);
+      ctx.stroke();
+    }
+
+    // Horizontal perspective grid lines
+    const hLines = 14;
+    for (let j = 1; j <= hLines; j++) {
+      const py = horizonY + Math.pow(j / hLines, 2) * (H - horizonY);
+      ctx.beginPath();
+      ctx.moveTo(0, py);
+      ctx.lineTo(W, py);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* Draw Character (Previous high-quality vector silhouette style) */
+  function drawCharacter(opts) {
+    const {
+      x, y, s,
+      walkPhase,
+      facing,
+      hunch,
+      eyeOffX, eyeOffY,
+      armProgress, // 0 (normal) -> 1 (raised high for spraying)
+      handX, handY, // World tip coordinates when writing
+      isWriting,
+      headTurnBack,
+    } = opts;
+
+    const bobY = Math.abs(Math.sin(walkPhase)) * 4 * s;
+    const hunchY = hunch * 14 * s;
+
+    ctx.save();
+    ctx.translate(x, y - bobY);
+    ctx.scale(facing, 1);
+
+    // 3D Ground Shadow
+    ctx.save();
+    ctx.scale(1, 0.18);
+    ctx.beginPath();
+    ctx.arc(0, 0, 32 * s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fill();
+    ctx.restore();
+
+    /* Legs */
+    const leg1 = Math.sin(walkPhase) * 24;
+    const leg2 = -leg1;
+
+    function drawLeg(offsetX, thighAngle) {
+      ctx.save();
+      ctx.translate(offsetX * s, -10 * s);
+      ctx.rotate((thighAngle * Math.PI) / 180);
+      ctx.fillStyle = '#0d0d12';
+      ctx.beginPath();
+      ctx.roundRect(-6 * s, 0, 12 * s, 46 * s, 4 * s);
+      ctx.fill();
+
+      // Lower leg
+      ctx.translate(0, 44 * s);
+      ctx.rotate((-thighAngle * 0.5 * Math.PI) / 180);
+      ctx.fillStyle = '#08080a';
+      ctx.beginPath();
+      ctx.roundRect(-5 * s, 0, 10 * s, 42 * s, 4 * s);
+      ctx.fill();
+
+      // Foot
+      ctx.translate(0, 38 * s);
+      ctx.beginPath();
+      ctx.roundRect(-5 * s, 0, 20 * s * facing, 8 * s, 3 * s);
+      ctx.fillStyle = '#050507';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawLeg(-10, leg1);
+    drawLeg(10, leg2);
+
+    /* Torso / Hoodie */
+    ctx.save();
+    ctx.translate(0, -hunchY);
+
+    ctx.beginPath();
+    ctx.moveTo(-26 * s, -6 * s);
+    ctx.bezierCurveTo(-34 * s, -45 * s, -28 * s, -80 * s, -22 * s, -108 * s);
+    ctx.lineTo(-9 * s, -122 * s);
+    ctx.lineTo(9 * s, -122 * s);
+    ctx.lineTo(22 * s, -108 * s);
+    ctx.bezierCurveTo(28 * s, -80 * s, 34 * s, -45 * s, 26 * s, -6 * s);
+    ctx.closePath();
+    ctx.fillStyle = '#121218';
+    ctx.fill();
+
+    // Crease details
+    ctx.beginPath();
+    ctx.moveTo(-10 * s, -60 * s);
+    ctx.lineTo(10 * s, -60 * s);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = s * 1.5;
+    ctx.stroke();
+
+    /* Left Arm (idle) */
+    const armSwing = Math.sin(walkPhase + Math.PI) * 16;
+    ctx.save();
+    ctx.translate(-24 * s, -100 * s);
+    ctx.rotate(((armSwing + 12) * Math.PI) / 180);
+    ctx.fillStyle = '#0f0f14';
+    ctx.beginPath();
+    ctx.roundRect(-5 * s, 0, 10 * s, 58 * s, 4 * s);
+    ctx.fill();
+    ctx.restore();
+
+    /* Right Arm (Writing Arm - Raises UP to spray target) */
+    ctx.save();
+    ctx.translate(24 * s, -100 * s);
+
+    if (armProgress > 0) {
+      // Smooth interpolation to raised spray pose
+      const armAngle = 12 * (1 - armProgress) + (-135) * armProgress;
+      ctx.rotate((armAngle * Math.PI) / 180);
+    } else {
+      ctx.rotate(((-armSwing + 12) * Math.PI) / 180);
+    }
+
+    ctx.fillStyle = '#101016';
+    ctx.beginPath();
+    ctx.roundRect(-5 * s, 0, 10 * s, 54 * s, 4 * s);
+    ctx.fill();
+
+    // Hand holding spray nozzle
+    ctx.translate(0, 52 * s);
+    ctx.fillStyle = '#181820';
+    ctx.beginPath();
+    ctx.arc(0, 0, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spray Can
+    ctx.fillStyle = '#282832';
+    ctx.beginPath();
+    ctx.roundRect(-4 * s, -2 * s, 8 * s, 22 * s, 3 * s);
+    ctx.fill();
+
+    // Glowing Nozzle Tip
+    ctx.fillStyle = '#c8f000';
+    ctx.shadowColor = '#c8f000';
+    ctx.shadowBlur = 12 * s;
+    ctx.beginPath();
+    ctx.arc(0, 22 * s, 3 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.restore(); // Right arm
+
+    /* Head & Hood */
+    ctx.save();
+    ctx.translate(0, -132 * s);
+
+    if (headTurnBack > 0) {
+      ctx.rotate(-headTurnBack * 0.6);
+    }
+
+    // Hood Outer
+    ctx.beginPath();
+    ctx.arc(0, 0, 25 * s, 0, Math.PI * 2);
+    ctx.fillStyle = '#121218';
+    ctx.fill();
+
+    // Hood Peak
+    ctx.beginPath();
+    ctx.moveTo(-20 * s, -18 * s);
+    ctx.quadraticCurveTo(0, -50 * s, 20 * s, -18 * s);
+    ctx.closePath();
+    ctx.fillStyle = '#121218';
+    ctx.fill();
+
+    // Hood Inner Shadow (Dark Face Void)
+    ctx.beginPath();
+    ctx.arc(0, 6 * s, 18 * s, 0, Math.PI * 2);
+    ctx.fillStyle = '#040406';
+    ctx.fill();
+
+    // Guilty Glowing Eyes
+    const ex = eyeOffX * 7 * s;
+    const ey = eyeOffY * 3 * s;
+
+    ctx.save();
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 12 * s;
+    ctx.fillStyle = '#f0f0f0';
+
+    // Left eye
+    ctx.beginPath();
+    ctx.ellipse(-7 * s + ex, 5 * s + ey, 4 * s, 2.3 * s, -0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Right eye
+    ctx.beginPath();
+    ctx.ellipse(7 * s + ex, 5 * s + ey, 4 * s, 2.3 * s, 0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dark Pupils (Guilty Glance)
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#111116';
+    ctx.beginPath();
+    ctx.arc(-7 * s + ex, 5 * s + ey, 1.8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(7 * s + ex, 5 * s + ey, 1.8 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore(); // Eyes
+    ctx.restore(); // Head
+    ctx.restore(); // Torso
+    ctx.restore(); // Root
+  }
+
+  /* Spray Emission Particles */
+  const sprayParticles = [];
+  function addSprayParticles(nozzleX, nozzleY, targetX, targetY) {
+    for (let i = 0; i < 6; i++) {
+      sprayParticles.push({
+        x: nozzleX,
+        y: nozzleY,
+        vx: (targetX - nozzleX) * 0.1 + (Math.random() - 0.5) * 8,
+        vy: (targetY - nozzleY) * 0.1 + (Math.random() - 0.5) * 8,
+        life: 1.0,
+        size: Math.random() * 3.5 + 1.5
+      });
+    }
+  }
+
+  function updateAndDrawParticles() {
+    for (let i = sprayParticles.length - 1; i >= 0; i--) {
+      const p = sprayParticles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.05;
+
+      if (p.life <= 0) {
+        sprayParticles.splice(i, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.shadowColor = '#c8f000';
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#c8f000';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /* Draw Spray Painted Wall Text */
+  function drawWallText(elapsed, textY) {
+    const W = canvas.width, H = canvas.height;
+    const fontSize = Math.min(W * 0.12, H * 0.20, 140);
+    ctx.font = `400 ${fontSize}px "DM Serif Display", Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const totalWidth = ctx.measureText(WRITE_TEXT).width;
+    let cx = W * 0.5 - totalWidth / 2;
+
+    let activeNozzleTargetX = cx;
+
+    for (let i = 0; i < WRITE_TEXT.length; i++) {
+      const letterStart = T.WRITE_START + i * LETTER_DUR;
+      const letterEnd   = letterStart + LETTER_DUR;
+
+      if (elapsed < letterStart) break;
+
+      const lp = linear((elapsed - letterStart) / (LETTER_DUR * 0.7));
+
+      const lw = ctx.measureText(WRITE_TEXT[i]).width;
+      const letterCenterX = cx + lw / 2;
+
+      if (elapsed >= letterStart && elapsed <= letterEnd) {
+        activeNozzleTargetX = letterCenterX;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = ease(lp);
+
+      // Intense Neon Spray Paint Glow
+      ctx.shadowColor = '#c8f000';
+      ctx.shadowBlur  = 35 * lp;
+      ctx.fillStyle   = '#c8f000';
+
+      ctx.fillText(WRITE_TEXT[i], letterCenterX, textY);
+      ctx.restore();
+
+      cx += lw;
+    }
+
+    return activeNozzleTargetX;
+  }
+
+  /* Render Frame */
+  function render(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+
+    const W = canvas.width, H = canvas.height;
+    const s = Math.min(W / 1200, H / 700);
+
+    const floorY = H * 0.78;
+    const textY = H * 0.32;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Draw 3D Floor & Atmosphere
+    draw3DEnvironment(ctx, W, H, elapsed);
+
+    /* Animation State */
+    let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
+    let eyeOffX = 0, eyeOffY = 0;
+    let armProgress = 0, isWriting = false;
+    let headTurnBack = 0;
+
+    if (elapsed < T.WALK_START) {
+      charX = -100 * s;
+    } else if (elapsed < T.WALK_END) {
+      const p = ease((elapsed - T.WALK_START) / (T.WALK_END - T.WALK_START));
+      charX = -100 * s + (W * 0.48 + 100 * s) * p;
+      walkPhase = (elapsed - T.WALK_START) * 0.008;
+      eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.005) * 0.5;
+    } else if (elapsed < T.LOOK_END) {
+      charX = W * 0.48;
+      hunch = 0.55;
+      const p = (elapsed - T.LOOK_START) / (T.LOOK_END - T.LOOK_START);
+      eyeOffX = Math.sin(p * Math.PI * 3) * 1.0;
+    } else if (elapsed < T.TURN_END) {
+      const p = (elapsed - T.TURN_START) / (T.TURN_END - T.TURN_START);
+      charX = W * 0.48;
+      charFacing = p < 0.5 ? 1 : -1;
+      hunch = 0.6;
+    } else if (elapsed < T.WRITE_END) {
+      charX = W * 0.48;
+      charFacing = -1;
+      hunch = 0.65;
+      armProgress = linear((elapsed - T.RAISE_START) / (T.RAISE_END - T.RAISE_START));
+      if (elapsed >= T.WRITE_START) {
+        isWriting = true;
+      }
+    } else if (elapsed < T.GUILT_END) {
+      const p = linear((elapsed - T.STEP_START) / (T.STEP_END - T.STEP_START));
+      charX = W * 0.48 + p * 40 * s;
+      charFacing = -1;
+      armProgress = Math.max(0, 1 - (elapsed - T.WRITE_END) / 1000);
+      headTurnBack = ease(linear((elapsed - T.GUILT_START) / (T.GUILT_END - T.GUILT_START)));
+      eyeOffX = 0.8;
+      eyeOffY = -0.1;
+    } else {
+      charX = W * 0.48 + 40 * s;
+      charFacing = -1;
+      armProgress = 0;
+      headTurnBack = 1.0;
+      eyeOffX = 0.9;
+      eyeOffY = -0.1;
+
+      if (cue && !cue.classList.contains('visible')) {
+        cue.classList.add('visible');
+      }
+    }
+
+    // 2. Draw Wall Spray Text
+    let sprayTargetX = W * 0.5;
+    if (elapsed >= T.WRITE_START) {
+      sprayTargetX = drawWallText(elapsed, textY);
+    }
+
+    // 3. Spray Particles
+    if (isWriting) {
+      const nozzleX = charX - 35 * s;
+      const nozzleY = floorY - 140 * s;
+      addSprayParticles(nozzleX, nozzleY, sprayTargetX, textY);
+    }
+    updateAndDrawParticles();
+
+    // 4. Draw Vector Character
+    drawCharacter({
+      x: charX,
+      y: floorY,
+      s,
+      walkPhase,
+      facing: charFacing,
+      hunch,
+      eyeOffX,
+      eyeOffY,
+      armProgress,
+      isWriting,
+      headTurnBack,
+    });
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+
+  /* Scroll Trigger */
+  const appSection = document.getElementById('app-section');
+  let scrolled = false;
+
+  function scrollToApp() {
+    if (!scrolled) {
+      scrolled = true;
+      appSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  window.addEventListener('wheel', scrollToApp, { passive: true });
+  window.addEventListener('touchstart', scrollToApp, { passive: true });
+  cue.addEventListener('click', scrollToApp);
+})();
+</script>
 
 <script>
-  // Nav bar visibility toggle on scroll
+  // Top nav bar hide/show scroll controller
   const nav = document.getElementById('main-nav');
   const appSection = document.getElementById('app-section');
-  const scrollCue = document.getElementById('scroll-cue');
 
-  function updateNav() {
+  function updateNavVisibility() {
     const appTop = appSection.getBoundingClientRect().top;
-    if (appTop <= 100) {
+    if (appTop <= 120) {
       nav.classList.remove('nav-hidden');
       nav.classList.add('nav-visible');
     } else {
@@ -274,12 +777,8 @@
     }
   }
 
-  window.addEventListener('scroll', updateNav, { passive: true });
-  updateNav();
-
-  scrollCue.addEventListener('click', () => {
-    appSection.scrollIntoView({ behavior: 'smooth' });
-  });
+  window.addEventListener('scroll', updateNavVisibility, { passive: true });
+  updateNavVisibility();
 </script>
 
 </body>
