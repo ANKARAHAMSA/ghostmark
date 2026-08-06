@@ -179,7 +179,7 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — Fast Scene, Smooth Normal Eye Motion
+     INTRO — Fast Scene, Smooth Normal Head & Eye Motion
 ═══════════════════════════════════════ -->
 <section id="intro">
   <canvas id="stage"></canvas>
@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     ANIMATION ENGINE (Normal Smooth Eye Motion)
+     ANIMATION ENGINE (Normal Smooth Head Turn)
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,24 +272,24 @@
 
   await document.fonts.ready;
 
-  // FAST SCENE TIMELINE (~4.5 SECONDS TOTAL)
+  // TIMELINE (~5.1 SECONDS TOTAL - Smooth Head Turn)
   const T = {
     FADE_IN:      200,
     WALK_START:   200,
     WALK_END:     1400,
     LOOK_START:   1400,
-    LOOK_END:     1800,
-    TURN_START:   1800,
-    TURN_END:     2100,
-    RAISE_START:  2100,
-    RAISE_END:    2400,
-    WRITE_START:  2400,
-    WRITE_END:    3600,
-    STEP_START:   3600,
-    STEP_END:     4000,
-    GUILT_START:  4000,
-    GUILT_END:    4500,
-    DONE:         4500,
+    LOOK_END:     2400, // Smooth normal 1.0s head turn left/right
+    TURN_START:   2400,
+    TURN_END:     2700,
+    RAISE_START:  2700,
+    RAISE_END:    3000,
+    WRITE_START:  3000,
+    WRITE_END:    4200,
+    STEP_START:   4200,
+    STEP_END:     4600,
+    GUILT_START:  4600,
+    GUILT_END:    5100,
+    DONE:         5100,
   };
 
   const WRITE_TEXT = 'GHOSTMARK';
@@ -359,6 +359,7 @@
       eyeOffX, eyeOffY,
       armProgress,
       headTurnBack,
+      headRotY,
     } = opts;
 
     const bobY = Math.abs(Math.sin(walkPhase)) * 4 * s;
@@ -495,8 +496,11 @@
     ctx.save();
     ctx.translate(0, -128 * s);
 
+    // Apply smooth head rotation
     if (headTurnBack > 0) {
       ctx.rotate(-headTurnBack * 0.55);
+    } else if (headRotY !== 0) {
+      ctx.rotate(headRotY * 0.35);
     }
 
     ctx.beginPath();
@@ -516,7 +520,7 @@
     ctx.fillStyle = '#050507';
     ctx.fill();
 
-    // Normal Smooth Human Eye Motion
+    // Smooth Human Eye Motion
     const ex = eyeOffX * 6 * s;
     const ey = eyeOffY * 3 * s;
 
@@ -600,6 +604,7 @@
     /* Animation state */
     let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
     let eyeOffX = 0, eyeOffY = 0;
+    let headRotY = 0;
     let armProgress = 0;
     let headTurnBack = 0;
 
@@ -609,14 +614,14 @@
       const p = ease((elapsed - T.WALK_START) / (T.WALK_END - T.WALK_START));
       charX = -90 * s + (W * 0.48 + 90 * s) * p;
       walkPhase = (elapsed - T.WALK_START) * 0.016;
-      // Normal smooth eye glance speed during walking
       eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.004) * 0.6;
     } else if (elapsed < T.LOOK_END) {
       charX = W * 0.48;
       hunch = 0.55;
       const p = (elapsed - T.LOOK_START) / (T.LOOK_END - T.LOOK_START);
-      // Smooth natural eye sweep
-      eyeOffX = Math.sin(p * Math.PI * 1.5) * 0.8;
+      // Smooth normal head turn left and right (1.0 second duration)
+      headRotY = Math.sin(p * Math.PI * 2);
+      eyeOffX = Math.sin(p * Math.PI * 2) * 0.8;
     } else if (elapsed < T.TURN_END) {
       const p = (elapsed - T.TURN_START) / (T.TURN_END - T.TURN_START);
       charX = W * 0.48;
@@ -665,6 +670,7 @@
       eyeOffY,
       armProgress,
       headTurnBack,
+      headRotY,
     });
 
     requestAnimationFrame(render);
