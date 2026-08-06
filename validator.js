@@ -91,7 +91,7 @@ scanBtn.addEventListener('click', async () => {
       </div>
 
       <div class="payload-box">
-        <div class="payload-box-label">Decoded Payload Secret</div>
+        <div class="payload-box-label">Decoded Payload (Your Watermark)</div>
         <div class="payload-text" id="pt">${esc(res.message)}</div>
         <button class="copy-btn" id="copy-btn">
           <span class="material-symbols-outlined">content_copy</span>Copy
