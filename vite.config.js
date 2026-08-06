@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  base: './',
   // All HTML files are treated as entry points (MPA mode)
   build: {
     rollupOptions: {
