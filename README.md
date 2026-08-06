@@ -1,33 +1,33 @@
-<div align="center">
-  <img src="https://lh3.googleusercontent.com/aida/AP1WRLtlATzELvYT5oVDS_TJXa7D65QMfcZLXj85WGjp2M1cKWDLvaPBnRCLhfkL-fg-uY_J_2c9odlJEFV2mYmJftfwgHARbNQJFjlDbo0R0Ylm8mVbscO3xfCjfsKtRwBsDX8SoEI7J2LrCb_tyh7yuqT6zgaxq-Vev6SQokmV3n5SEki5niu_nYzMKM8e9JVm7T9uWOZzhCjmlL9o-rTd5xvLTU-BKyIiz9Djp-k867EI0yLkFHmaSeY798M" width="120" alt="Ghostmark Logo"/>
-  <h1>Ghostmark Framework</h1>
-  <p><strong>Multimodal Generative AI Command Center</strong></p>
-</div>
+# Ghostmark
 
----
+Invisible image watermarking. Embed hidden text payloads into any image using LSB steganography — no visible change, fully reversible.
 
-Ghostmark is a high-fidelity "Dark Mode" dashboard and framework for multimodal generative AI, designed with absolute security and engineering precision in mind.
+## What it does
 
-## 🚀 Features
+- **Encode** — Embed any text string into an image's pixel data. The change is mathematically imperceptible (&lt;0.01% visual delta per channel).
+- **Validate** — Scan any watermarked PNG to extract and verify the hidden payload instantly.
+- **Vault** — Session history of all encode and scan operations.
 
-- **Sentry Dashboard**: Real-time vector tracing and global threat topography.
-- **Validator**: (In Development) Verify and validate data integrity.
-- **Encoder Workbench**: (In Development) Process and encode complex data models.
-- **Vault**: (In Development) Secure storage and management.
+## How it works
 
-## 🛠️ Quick Start
+LSB (Least Significant Bit) steganography writes data into the 2 least significant bits of each R, G, B channel. This causes a maximum shift of ±3 per channel value — invisible to the human eye but reliably detectable algorithmically.
 
-This project uses a lightweight Vanilla JS setup powered by Vite.
+A `GHMK` magic header is prepended to all payloads so the validator can confirm authenticity without false positives.
+
+> **Note:** Always export watermarked images as PNG. JPEG re-compression destroys the LSB data.
+
+## Stack
+
+- Vite (multi-page, no framework)
+- Vanilla JS ES modules
+- Canvas API for pixel manipulation
+- DM Serif Display · Inter · JetBrains Mono
+
+## Run locally
 
 ```bash
-# Install dependencies
 npm install
-
-# Start the local development server
 npm run dev
 ```
 
-## 🎨 Design System (Cloak & Cipher)
-- **Theme**: Dark Mode with Glassmorphism
-- **Accent**: Cyber Lime (`#caf300`)
-- **Typography**: Inter (UI) & JetBrains Mono (Data)
+Open [http://localhost:5173](http://localhost:5173)
