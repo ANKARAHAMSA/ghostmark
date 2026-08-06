@@ -24,13 +24,13 @@
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
-    /* ── Intro canvas section ── */
+    /* ── Intro section ── */
     #intro {
       position: relative;
       height: 100vh;
       width: 100%;
       overflow: hidden;
-      background: #040406;
+      background: #08080a;
       flex-shrink: 0;
     }
     #stage {
@@ -62,12 +62,12 @@
       font-size: 11px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: rgba(200, 240, 0, 0.85);
+      color: rgba(255, 255, 255, 0.5);
     }
     .cue-line {
       width: 1px;
-      height: 40px;
-      background: linear-gradient(to bottom, #c8f000, transparent);
+      height: 36px;
+      background: linear-gradient(to bottom, var(--lime), transparent);
       animation: cue-pulse 1.5s ease infinite;
     }
     @keyframes cue-pulse {
@@ -179,7 +179,7 @@
 </nav>
 
 <!-- ══════════════════════════════════════
-     INTRO — 3D Atmospheric Animation Stage
+     INTRO — Clean Cinematic Stage
 ═══════════════════════════════════════ -->
 <section id="intro">
   <canvas id="stage"></canvas>
@@ -255,7 +255,7 @@
 </section>
 
 <!-- ══════════════════════════════════════
-     ANIMATION ENGINE
+     CLEAN ANIMATION ENGINE
 ═══════════════════════════════════════ -->
 <script>
 (async function () {
@@ -272,24 +272,24 @@
 
   await document.fonts.ready;
 
-  // FAST & IMPACTFUL TIMELINE (~10 seconds total)
+  // FAST & CLEAN TIMELINE (8.5 seconds total)
   const T = {
-    FADE_IN:      400,
-    WALK_START:   500,
-    WALK_END:     2800,
-    LOOK_START:   2800,
-    LOOK_END:     3800,
-    TURN_START:   3800,
-    TURN_END:     4500,
-    RAISE_START:  4500,
-    RAISE_END:    5200,
-    WRITE_START:  5200,
-    WRITE_END:    8200,
-    STEP_START:   8200,
-    STEP_END:     8800,
-    GUILT_START:  8800,
-    GUILT_END:    10200,
-    DONE:         10200,
+    FADE_IN:      300,
+    WALK_START:   400,
+    WALK_END:     2400,
+    LOOK_START:   2400,
+    LOOK_END:     3200,
+    TURN_START:   3200,
+    TURN_END:     3800,
+    RAISE_START:  3800,
+    RAISE_END:    4400,
+    WRITE_START:  4400,
+    WRITE_END:    6800,
+    STEP_START:   6800,
+    STEP_END:     7300,
+    GUILT_START:  7300,
+    GUILT_END:    8500,
+    DONE:         8500,
   };
 
   const WRITE_TEXT = 'GHOSTMARK';
@@ -300,64 +300,33 @@
   const ease   = t => t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
   const linear = t => Math.max(0, Math.min(1, t));
 
-  /* 3D Perspective Grid & Floor */
-  function draw3DEnvironment(ctx, W, H, elapsed) {
-    const horizonY = H * 0.42;
-
-    // Background gradient
+  /* Clean Dark Room Atmosphere (No dots, no grid lines) */
+  function drawAtmosphere(W, H) {
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#030305');
-    bgGrad.addColorStop(0.42, '#08080d');
-    bgGrad.addColorStop(1, '#020204');
+    bgGrad.addColorStop(0, '#060608');
+    bgGrad.addColorStop(0.5, '#0b0b0e');
+    bgGrad.addColorStop(1, '#040406');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // 3D Wall Light Spotlight
-    const spotX = W * 0.5;
-    const spotY = horizonY - 40;
-    const spotGrad = ctx.createRadialGradient(spotX, spotY, 20, spotX, spotY, W * 0.45);
-    spotGrad.addColorStop(0, 'rgba(200, 240, 0, 0.07)');
-    spotGrad.addColorStop(0.5, 'rgba(200, 240, 0, 0.02)');
-    spotGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = spotGrad;
-    ctx.fillRect(0, 0, W, horizonY + 50);
-
-    // 3D Perspective Floor Grid
-    ctx.save();
-    ctx.strokeStyle = 'rgba(200, 240, 0, 0.08)';
+    // Subtle dark wall floor crease
+    const floorY = H * 0.76;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
-
-    // Horizon Line
     ctx.beginPath();
-    ctx.moveTo(0, horizonY);
-    ctx.lineTo(W, horizonY);
+    ctx.moveTo(0, floorY);
+    ctx.lineTo(W, floorY);
     ctx.stroke();
 
-    // Vanishing point perspective lines
-    const vpX = W * 0.5;
-    const vpY = horizonY;
-    const lines = 24;
-    for (let i = 0; i <= lines; i++) {
-      const targetX = (i / lines) * W * 2 - W * 0.5;
-      ctx.beginPath();
-      ctx.moveTo(vpX, vpY);
-      ctx.lineTo(targetX, H);
-      ctx.stroke();
-    }
-
-    // Horizontal perspective grid lines
-    const hLines = 14;
-    for (let j = 1; j <= hLines; j++) {
-      const py = horizonY + Math.pow(j / hLines, 2) * (H - horizonY);
-      ctx.beginPath();
-      ctx.moveTo(0, py);
-      ctx.lineTo(W, py);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // Soft spotlight on the wall
+    const spot = ctx.createRadialGradient(W * 0.5, H * 0.35, 10, W * 0.5, H * 0.35, W * 0.4);
+    spot.addColorStop(0, 'rgba(200, 240, 0, 0.04)');
+    spot.addColorStop(1, 'transparent');
+    ctx.fillStyle = spot;
+    ctx.fillRect(0, 0, W, H);
   }
 
-  /* Draw Character (Previous high-quality vector silhouette style) */
+  /* Sleek Vector Character */
   function drawCharacter(opts) {
     const {
       x, y, s,
@@ -365,9 +334,7 @@
       facing,
       hunch,
       eyeOffX, eyeOffY,
-      armProgress, // 0 (normal) -> 1 (raised high for spraying)
-      handX, handY, // World tip coordinates when writing
-      isWriting,
+      armProgress,
       headTurnBack,
     } = opts;
 
@@ -378,118 +345,103 @@
     ctx.translate(x, y - bobY);
     ctx.scale(facing, 1);
 
-    // 3D Ground Shadow
+    // Soft shadow on floor
     ctx.save();
-    ctx.scale(1, 0.18);
+    ctx.scale(1, 0.2);
     ctx.beginPath();
-    ctx.arc(0, 0, 32 * s, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.arc(0, 0, 28 * s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fill();
     ctx.restore();
 
     /* Legs */
-    const leg1 = Math.sin(walkPhase) * 24;
+    const leg1 = Math.sin(walkPhase) * 22;
     const leg2 = -leg1;
 
     function drawLeg(offsetX, thighAngle) {
       ctx.save();
       ctx.translate(offsetX * s, -10 * s);
       ctx.rotate((thighAngle * Math.PI) / 180);
-      ctx.fillStyle = '#0d0d12';
+      ctx.fillStyle = '#111116';
       ctx.beginPath();
-      ctx.roundRect(-6 * s, 0, 12 * s, 46 * s, 4 * s);
+      ctx.roundRect(-5 * s, 0, 10 * s, 44 * s, 3 * s);
       ctx.fill();
 
       // Lower leg
-      ctx.translate(0, 44 * s);
+      ctx.translate(0, 42 * s);
       ctx.rotate((-thighAngle * 0.5 * Math.PI) / 180);
-      ctx.fillStyle = '#08080a';
+      ctx.fillStyle = '#0b0b0e';
       ctx.beginPath();
-      ctx.roundRect(-5 * s, 0, 10 * s, 42 * s, 4 * s);
+      ctx.roundRect(-4.5 * s, 0, 9 * s, 40 * s, 3 * s);
       ctx.fill();
 
       // Foot
-      ctx.translate(0, 38 * s);
+      ctx.translate(0, 36 * s);
       ctx.beginPath();
-      ctx.roundRect(-5 * s, 0, 20 * s * facing, 8 * s, 3 * s);
-      ctx.fillStyle = '#050507';
+      ctx.roundRect(-5 * s, 0, 18 * s * facing, 7 * s, 3 * s);
+      ctx.fillStyle = '#060608';
       ctx.fill();
       ctx.restore();
     }
 
-    drawLeg(-10, leg1);
-    drawLeg(10, leg2);
+    drawLeg(-9, leg1);
+    drawLeg(9, leg2);
 
     /* Torso / Hoodie */
     ctx.save();
     ctx.translate(0, -hunchY);
 
     ctx.beginPath();
-    ctx.moveTo(-26 * s, -6 * s);
-    ctx.bezierCurveTo(-34 * s, -45 * s, -28 * s, -80 * s, -22 * s, -108 * s);
-    ctx.lineTo(-9 * s, -122 * s);
-    ctx.lineTo(9 * s, -122 * s);
-    ctx.lineTo(22 * s, -108 * s);
-    ctx.bezierCurveTo(28 * s, -80 * s, 34 * s, -45 * s, 26 * s, -6 * s);
+    ctx.moveTo(-24 * s, -6 * s);
+    ctx.bezierCurveTo(-32 * s, -42 * s, -26 * s, -76 * s, -20 * s, -104 * s);
+    ctx.lineTo(-8 * s, -118 * s);
+    ctx.lineTo(8 * s, -118 * s);
+    ctx.lineTo(20 * s, -104 * s);
+    ctx.bezierCurveTo(26 * s, -76 * s, 32 * s, -42 * s, 24 * s, -6 * s);
     ctx.closePath();
-    ctx.fillStyle = '#121218';
+    ctx.fillStyle = '#14141a';
     ctx.fill();
 
-    // Crease details
-    ctx.beginPath();
-    ctx.moveTo(-10 * s, -60 * s);
-    ctx.lineTo(10 * s, -60 * s);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = s * 1.5;
-    ctx.stroke();
-
-    /* Left Arm (idle) */
-    const armSwing = Math.sin(walkPhase + Math.PI) * 16;
+    /* Left Arm */
+    const armSwing = Math.sin(walkPhase + Math.PI) * 14;
     ctx.save();
-    ctx.translate(-24 * s, -100 * s);
-    ctx.rotate(((armSwing + 12) * Math.PI) / 180);
-    ctx.fillStyle = '#0f0f14';
-    ctx.beginPath();
-    ctx.roundRect(-5 * s, 0, 10 * s, 58 * s, 4 * s);
-    ctx.fill();
-    ctx.restore();
-
-    /* Right Arm (Writing Arm - Raises UP to spray target) */
-    ctx.save();
-    ctx.translate(24 * s, -100 * s);
-
-    if (armProgress > 0) {
-      // Smooth interpolation to raised spray pose
-      const armAngle = 12 * (1 - armProgress) + (-135) * armProgress;
-      ctx.rotate((armAngle * Math.PI) / 180);
-    } else {
-      ctx.rotate(((-armSwing + 12) * Math.PI) / 180);
-    }
-
-    ctx.fillStyle = '#101016';
+    ctx.translate(-22 * s, -96 * s);
+    ctx.rotate(((armSwing + 10) * Math.PI) / 180);
+    ctx.fillStyle = '#101014';
     ctx.beginPath();
     ctx.roundRect(-5 * s, 0, 10 * s, 54 * s, 4 * s);
     ctx.fill();
+    ctx.restore();
 
-    // Hand holding spray nozzle
-    ctx.translate(0, 52 * s);
-    ctx.fillStyle = '#181820';
+    /* Right Arm (Writing arm) */
+    ctx.save();
+    ctx.translate(22 * s, -96 * s);
+
+    if (armProgress > 0) {
+      // Arm raises UP cleanly towards wall writing level
+      const armAngle = 10 * (1 - armProgress) + (-140) * armProgress;
+      ctx.rotate((armAngle * Math.PI) / 180);
+    } else {
+      ctx.rotate(((-armSwing + 10) * Math.PI) / 180);
+    }
+
+    ctx.fillStyle = '#121218';
     ctx.beginPath();
-    ctx.arc(0, 0, 6 * s, 0, Math.PI * 2);
+    ctx.roundRect(-5 * s, 0, 10 * s, 50 * s, 4 * s);
     ctx.fill();
 
-    // Spray Can
-    ctx.fillStyle = '#282832';
+    // Hand & Marker
+    ctx.translate(0, 48 * s);
+    ctx.fillStyle = '#1c1c24';
     ctx.beginPath();
-    ctx.roundRect(-4 * s, -2 * s, 8 * s, 22 * s, 3 * s);
+    ctx.arc(0, 0, 5 * s, 0, Math.PI * 2);
     ctx.fill();
 
-    // Glowing Nozzle Tip
     ctx.fillStyle = '#c8f000';
     ctx.shadowColor = '#c8f000';
-    ctx.shadowBlur = 12 * s;
+    ctx.shadowBlur = 8 * s;
     ctx.beginPath();
-    ctx.arc(0, 22 * s, 3 * s, 0, Math.PI * 2);
+    ctx.arc(0, 14 * s, 2.5 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
@@ -497,59 +449,57 @@
 
     /* Head & Hood */
     ctx.save();
-    ctx.translate(0, -132 * s);
+    ctx.translate(0, -128 * s);
 
     if (headTurnBack > 0) {
-      ctx.rotate(-headTurnBack * 0.6);
+      ctx.rotate(-headTurnBack * 0.55);
     }
 
     // Hood Outer
     ctx.beginPath();
-    ctx.arc(0, 0, 25 * s, 0, Math.PI * 2);
-    ctx.fillStyle = '#121218';
+    ctx.arc(0, 0, 24 * s, 0, Math.PI * 2);
+    ctx.fillStyle = '#14141a';
     ctx.fill();
 
     // Hood Peak
     ctx.beginPath();
-    ctx.moveTo(-20 * s, -18 * s);
-    ctx.quadraticCurveTo(0, -50 * s, 20 * s, -18 * s);
+    ctx.moveTo(-18 * s, -16 * s);
+    ctx.quadraticCurveTo(0, -46 * s, 18 * s, -16 * s);
     ctx.closePath();
-    ctx.fillStyle = '#121218';
+    ctx.fillStyle = '#14141a';
     ctx.fill();
 
     // Hood Inner Shadow (Dark Face Void)
     ctx.beginPath();
-    ctx.arc(0, 6 * s, 18 * s, 0, Math.PI * 2);
-    ctx.fillStyle = '#040406';
+    ctx.arc(0, 6 * s, 17 * s, 0, Math.PI * 2);
+    ctx.fillStyle = '#050507';
     ctx.fill();
 
-    // Guilty Glowing Eyes
-    const ex = eyeOffX * 7 * s;
+    // Guilty Eyes
+    const ex = eyeOffX * 6 * s;
     const ey = eyeOffY * 3 * s;
 
     ctx.save();
     ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 12 * s;
-    ctx.fillStyle = '#f0f0f0';
+    ctx.shadowBlur = 10 * s;
+    ctx.fillStyle = '#ffffff';
 
-    // Left eye
     ctx.beginPath();
-    ctx.ellipse(-7 * s + ex, 5 * s + ey, 4 * s, 2.3 * s, -0.1, 0, Math.PI * 2);
+    ctx.ellipse(-6.5 * s + ex, 4 * s + ey, 3.8 * s, 2.2 * s, -0.1, 0, Math.PI * 2);
     ctx.fill();
 
-    // Right eye
     ctx.beginPath();
-    ctx.ellipse(7 * s + ex, 5 * s + ey, 4 * s, 2.3 * s, 0.1, 0, Math.PI * 2);
+    ctx.ellipse(6.5 * s + ex, 4 * s + ey, 3.8 * s, 2.2 * s, 0.1, 0, Math.PI * 2);
     ctx.fill();
 
-    // Dark Pupils (Guilty Glance)
+    // Pupils
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#111116';
     ctx.beginPath();
-    ctx.arc(-7 * s + ex, 5 * s + ey, 1.8 * s, 0, Math.PI * 2);
+    ctx.arc(-6.5 * s + ex, 4 * s + ey, 1.6 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(7 * s + ex, 5 * s + ey, 1.8 * s, 0, Math.PI * 2);
+    ctx.arc(6.5 * s + ex, 4 * s + ey, 1.6 * s, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore(); // Eyes
@@ -558,46 +508,7 @@
     ctx.restore(); // Root
   }
 
-  /* Spray Emission Particles */
-  const sprayParticles = [];
-  function addSprayParticles(nozzleX, nozzleY, targetX, targetY) {
-    for (let i = 0; i < 6; i++) {
-      sprayParticles.push({
-        x: nozzleX,
-        y: nozzleY,
-        vx: (targetX - nozzleX) * 0.1 + (Math.random() - 0.5) * 8,
-        vy: (targetY - nozzleY) * 0.1 + (Math.random() - 0.5) * 8,
-        life: 1.0,
-        size: Math.random() * 3.5 + 1.5
-      });
-    }
-  }
-
-  function updateAndDrawParticles() {
-    for (let i = sprayParticles.length - 1; i >= 0; i--) {
-      const p = sprayParticles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life -= 0.05;
-
-      if (p.life <= 0) {
-        sprayParticles.splice(i, 1);
-        continue;
-      }
-
-      ctx.save();
-      ctx.globalAlpha = p.life;
-      ctx.shadowColor = '#c8f000';
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = '#c8f000';
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  /* Draw Spray Painted Wall Text */
+  /* Clean Glowing Wall Text */
   function drawWallText(elapsed, textY) {
     const W = canvas.width, H = canvas.height;
     const fontSize = Math.min(W * 0.12, H * 0.20, 140);
@@ -608,29 +519,20 @@
     const totalWidth = ctx.measureText(WRITE_TEXT).width;
     let cx = W * 0.5 - totalWidth / 2;
 
-    let activeNozzleTargetX = cx;
-
     for (let i = 0; i < WRITE_TEXT.length; i++) {
       const letterStart = T.WRITE_START + i * LETTER_DUR;
-      const letterEnd   = letterStart + LETTER_DUR;
-
       if (elapsed < letterStart) break;
 
-      const lp = linear((elapsed - letterStart) / (LETTER_DUR * 0.7));
-
+      const lp = linear((elapsed - letterStart) / (LETTER_DUR * 0.6));
       const lw = ctx.measureText(WRITE_TEXT[i]).width;
       const letterCenterX = cx + lw / 2;
-
-      if (elapsed >= letterStart && elapsed <= letterEnd) {
-        activeNozzleTargetX = letterCenterX;
-      }
 
       ctx.save();
       ctx.globalAlpha = ease(lp);
 
-      // Intense Neon Spray Paint Glow
+      // Clean glowing text
       ctx.shadowColor = '#c8f000';
-      ctx.shadowBlur  = 35 * lp;
+      ctx.shadowBlur  = 24 * lp;
       ctx.fillStyle   = '#c8f000';
 
       ctx.fillText(WRITE_TEXT[i], letterCenterX, textY);
@@ -638,11 +540,9 @@
 
       cx += lw;
     }
-
-    return activeNozzleTargetX;
   }
 
-  /* Render Frame */
+  /* Main Render Loop */
   function render(ts) {
     if (!startTime) startTime = ts;
     const elapsed = ts - startTime;
@@ -650,32 +550,32 @@
     const W = canvas.width, H = canvas.height;
     const s = Math.min(W / 1200, H / 700);
 
-    const floorY = H * 0.78;
+    const floorY = H * 0.76;
     const textY = H * 0.32;
 
     ctx.clearRect(0, 0, W, H);
 
-    // 1. Draw 3D Floor & Atmosphere
-    draw3DEnvironment(ctx, W, H, elapsed);
+    // 1. Dark Atmosphere
+    drawAtmosphere(W, H);
 
-    /* Animation State */
+    /* Animation state */
     let charX, charFacing = 1, hunch = 0.4, walkPhase = 0;
     let eyeOffX = 0, eyeOffY = 0;
-    let armProgress = 0, isWriting = false;
+    let armProgress = 0;
     let headTurnBack = 0;
 
     if (elapsed < T.WALK_START) {
-      charX = -100 * s;
+      charX = -90 * s;
     } else if (elapsed < T.WALK_END) {
       const p = ease((elapsed - T.WALK_START) / (T.WALK_END - T.WALK_START));
-      charX = -100 * s + (W * 0.48 + 100 * s) * p;
-      walkPhase = (elapsed - T.WALK_START) * 0.008;
+      charX = -90 * s + (W * 0.48 + 90 * s) * p;
+      walkPhase = (elapsed - T.WALK_START) * 0.009;
       eyeOffX = Math.sin((elapsed - T.WALK_START) * 0.005) * 0.5;
     } else if (elapsed < T.LOOK_END) {
       charX = W * 0.48;
       hunch = 0.55;
       const p = (elapsed - T.LOOK_START) / (T.LOOK_END - T.LOOK_START);
-      eyeOffX = Math.sin(p * Math.PI * 3) * 1.0;
+      eyeOffX = Math.sin(p * Math.PI * 3) * 0.9;
     } else if (elapsed < T.TURN_END) {
       const p = (elapsed - T.TURN_START) / (T.TURN_END - T.TURN_START);
       charX = W * 0.48;
@@ -686,19 +586,16 @@
       charFacing = -1;
       hunch = 0.65;
       armProgress = linear((elapsed - T.RAISE_START) / (T.RAISE_END - T.RAISE_START));
-      if (elapsed >= T.WRITE_START) {
-        isWriting = true;
-      }
     } else if (elapsed < T.GUILT_END) {
       const p = linear((elapsed - T.STEP_START) / (T.STEP_END - T.STEP_START));
-      charX = W * 0.48 + p * 40 * s;
+      charX = W * 0.48 + p * 36 * s;
       charFacing = -1;
-      armProgress = Math.max(0, 1 - (elapsed - T.WRITE_END) / 1000);
+      armProgress = Math.max(0, 1 - (elapsed - T.WRITE_END) / 800);
       headTurnBack = ease(linear((elapsed - T.GUILT_START) / (T.GUILT_END - T.GUILT_START)));
-      eyeOffX = 0.8;
+      eyeOffX = 0.85;
       eyeOffY = -0.1;
     } else {
-      charX = W * 0.48 + 40 * s;
+      charX = W * 0.48 + 36 * s;
       charFacing = -1;
       armProgress = 0;
       headTurnBack = 1.0;
@@ -710,21 +607,12 @@
       }
     }
 
-    // 2. Draw Wall Spray Text
-    let sprayTargetX = W * 0.5;
+    // 2. Draw Wall Text
     if (elapsed >= T.WRITE_START) {
-      sprayTargetX = drawWallText(elapsed, textY);
+      drawWallText(elapsed, textY);
     }
 
-    // 3. Spray Particles
-    if (isWriting) {
-      const nozzleX = charX - 35 * s;
-      const nozzleY = floorY - 140 * s;
-      addSprayParticles(nozzleX, nozzleY, sprayTargetX, textY);
-    }
-    updateAndDrawParticles();
-
-    // 4. Draw Vector Character
+    // 3. Draw Character
     drawCharacter({
       x: charX,
       y: floorY,
@@ -735,7 +623,6 @@
       eyeOffX,
       eyeOffY,
       armProgress,
-      isWriting,
       headTurnBack,
     });
 
@@ -762,7 +649,7 @@
 </script>
 
 <script>
-  // Top nav bar hide/show scroll controller
+  // Top nav bar visibility controller on scroll
   const nav = document.getElementById('main-nav');
   const appSection = document.getElementById('app-section');
 
