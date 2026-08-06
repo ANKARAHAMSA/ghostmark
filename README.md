@@ -23,11 +23,21 @@
 
 ---
 
-## 🌟 Overview
+## 📖 About The Project
 
-**Ghostmark** is a state-of-the-art web application engineered for **invisible steganographic watermarking**. Unlike traditional visible watermarks that alter image aesthetics or destroy visual composition, Ghostmark embeds encrypted payload signatures into the **2 Least Significant Bits (LSB)** of each RGB color channel.
+**Ghostmark** is an advanced, privacy-first web application designed for **invisible image watermarking and authorship protection**. In traditional media protection, visible stamps and text overlays degrade the aesthetics and quality of photos. Ghostmark solves this by hiding digital signatures, copyright metadata, or secret keys directly inside the raw pixel data where human eyes cannot detect them.
 
-The resulting watermarked image preserves **99.8%+ Peak Signal-to-Noise Ratio (PSNR)** — rendering the embedded mark completely invisible to human eyes while allowing deterministic extraction using the built-in **Validator**.
+Whether protecting original artwork, verifying photo authenticity, or tracking digital media provenance, Ghostmark delivers an unidentifiable layer of security without sacrificing image quality.
+
+---
+
+## 🔬 Steganography Technology
+
+At the heart of Ghostmark is a high-precision **Least Significant Bit (LSB) Steganography Engine**. Every digital image pixel contains 8-bit color values (0–255) for Red, Green, and Blue channels. Ghostmark embeds encrypted binary payloads into the **lowest 2 bits** of each channel:
+
+- **Imperceptible Variance**: Modifying the 2 lowest bits shifts color values by a maximum of $\pm 3$ units out of 255—a difference completely invisible to the human visual cortex.
+- **GHMK Magic Protocol Header**: Every watermarked image includes a 4-byte `GHMK` magic header alongside binary length metadata to ensure deterministic extraction and zero false positives during scanning.
+- **100% Client-Side Security**: Encoding and extraction run entirely inside your browser using the HTML5 Canvas API and Web Crypto API. No server uploads or external network requests are ever made.
 
 ```
 [ Original Image ]  +  [ Payload Secret ]  ──( LSB Encoder )──>  [ Watermarked PNG ]
@@ -39,46 +49,27 @@ The resulting watermarked image preserves **99.8%+ Peak Signal-to-Noise Ratio (P
 
 ---
 
+## 🎨 Visual Showcase & UI Experience
+
+Ghostmark is designed with a premium, Vercel-inspired **dark minimal aesthetic** tailored for high-end digital tools:
+
+- **Cinematic Animated Landing Page**: An interactive 3D intro featuring a mysterious hooded figure, dynamic canvas typography, smooth character motion, and custom spotlight lighting.
+- **Ambient Cursor Spotlight**: Mouse movements dynamically illuminate the dark matrix background texture, creating an atmospheric cyber security vibe.
+- **Sentry Session Dashboard**: Live overview tracking encoding metrics, scanned images, visual delta stats ($<0.01\%$), and real-time session logs.
+- **Interactive Validator & Vault**: Instant Drag-and-Drop image inspection with binary payload recovery and local session history.
+
+---
+
 ## ✨ Key Features
 
-- **👁️ Imperceptible Steganography**: Writes secret payload data into the lowest bits of R, G, and B color channels. Maximum shift is $\pm 3$ per pixel value.
-- **🛡️ GHMK Protocol Header**: Encodes a magic byte header (`GHMK`) alongside binary payload length metadata to guarantee zero false positives.
-- **⚡ 100% Client-Side & Private**: All image processing happens locally inside the browser via HTML5 Canvas API and Web Crypto API. No server uploads.
-- **🎭 Cinematic Animated Landing Page**: Interactive story-driven 3D intro featuring procedural Canvas animation, character storytelling, and dark cyber aesthetic.
-- **📊 Sentry Dashboard**: Real-time session analytics tracking encoded counts, scanned images, visual delta metrics, and event history.
-- **🔒 Secure Vault**: Local storage vault to track recent encoding & scanning history with one-click export.
-- **💡 Ambient Spotlight Cursor**: Theme-matching ambient radial spotlight following mouse movement for immersive dark-mode UI.
+- **👁️ 100% Invisible Signatures**: Zero visual degradation with 99.8%+ PSNR preservation.
+- **🛡️ Deterministic Verification**: Detects and extracts hidden payloads with 100% accuracy.
+- **🔒 Privacy First**: All operations execute locally in memory—your photos never leave your device.
+- **⚡ Lossless PNG Export**: Automatically outputs lossless PNG files to preserve embedded bit structures indefinitely.
 
 ---
 
-## 🛠️ How LSB Steganography Works
-
-Every pixel in a digital image consists of Red, Green, and Blue (RGB) values ranging from `0` to `255` (8-bit integer):
-
-$$\text{Pixel Color} = [R_8, G_8, B_8]$$
-
-Ghostmark isolates the **2 Least Significant Bits** of each channel:
-
-```
-Original Byte:  1 1 0 1 0 1  [ 0 1 ]  <-- 2 LSBs modified
-Payload Bits:                [ 1 0 ]
-------------------------------------
-Modified Byte:  1 1 0 1 0 1  [ 1 0 ]  (Max visual difference: ±3 / 255)
-```
-
-Because human eyes cannot perceive a variance of $\pm 3$ units out of 255 in individual channel intensities, the watermark remains **100% invisible**.
-
-> **Note**: Lossy compression formats like JPEG alter low-order bit values. Therefore, Ghostmark automatically enforces lossless **PNG** export to preserve embedded payloads indefinitely.
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18.0.0 or higher)
-- `npm` or `pnpm`
-
-### Installation & Local Setup
+## 🛠️ Installation & Local Setup
 
 ```bash
 # 1. Clone the repository
@@ -120,18 +111,6 @@ ghostmark/
     ├── favicon.svg     # Brand Favicon Icon
     └── bg-texture.jpg  # Translucent Dark Cyber Background Texture
 ```
-
----
-
-## 🖥️ Page Navigation Guide
-
-| Page | Path | Description |
-| :--- | :--- | :--- |
-| **Home** | `/index.html` | Interactive intro animation & product showcase |
-| **Sentry** | `/sentry.html` | Live session metrics & visual delta overview |
-| **Encoder** | `/encoder.html` | Embed secret text/keys into any image |
-| **Validator** | `/validator.html` | Extract & verify hidden signatures from images |
-| **Vault** | `/vault.html` | History log of recent watermarking operations |
 
 ---
 
