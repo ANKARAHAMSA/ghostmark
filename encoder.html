@@ -12,13 +12,28 @@
 <nav class="nav">
   <div class="nav-brand"><span class="nav-brand-logo"><img src="/logo.svg" alt="Ghostmark Logo" width="22" height="22" /></span>Ghostmark</div>
   <ul class="nav-links">
+    <li><a href="/index.html">Home</a></li>
     <li><a href="/sentry.html">Sentry</a></li>
     <li><a href="/encoder.html" class="active">Encoder</a></li>
     <li><a href="/validator.html">Validator</a></li>
     <li><a href="/vault.html">Vault</a></li>
   </ul>
-  <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
+  <div class="nav-end"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+  </button>
 </nav>
+
+<div class="nav-mobile-overlay" id="nav-overlay">
+  <a href="/index.html">Home</a>
+  <a href="/sentry.html">Sentry</a>
+  <a href="/encoder.html" class="active">Encoder</a>
+  <a href="/validator.html">Validator</a>
+  <a href="/vault.html">Vault</a>
+  <div class="mobile-nav-badge"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+</div>
 
 <div class="page">
   <div class="page-header">
@@ -78,12 +93,20 @@
 
       <div class="field">
         <p class="field-label">Algorithm</p>
-        <div class="algo-row">
-          <span class="algo-n">I</span>
-          <div>
-            <div class="algo-title">LSB Steganography</div>
-            <div class="algo-desc">Writes data into the least significant bits of R, G, B channels. Max shift of ±3 per channel — imperceptible.</div>
-            <span class="algo-chip">99.8% PSNR preserved</span>
+        <div class="algo-selector" id="algo-selector">
+          <div class="algo-card active" data-algo="lsb" id="algo-lsb">
+            <div class="algo-card-dot"></div>
+            <div class="algo-card-badge">Mode 01</div>
+            <div class="algo-card-title">LSB Steganography</div>
+            <div class="algo-card-desc">Writes data into the 2 least significant bits of R, G, B channels. Fast, lossless, invisible.</div>
+            <span class="algo-card-tag">99.8% PSNR</span>
+          </div>
+          <div class="algo-card" data-algo="dwtdct" id="algo-dwtdct">
+            <div class="algo-card-dot"></div>
+            <div class="algo-card-badge">Mode 02</div>
+            <div class="algo-card-title">DWT-DCT + Arnold</div>
+            <div class="algo-card-desc">Frequency domain embedding with Arnold Cat Map scrambling. Survives JPEG compression &gt; 75%.</div>
+            <span class="algo-card-tag">JPEG robust</span>
           </div>
         </div>
       </div>
@@ -111,5 +134,18 @@
 
 <script type="module" src="/encoder.js"></script>
 <script type="module" src="/cursor.js"></script>
+<script>
+// Mobile nav toggle
+const toggle = document.getElementById('nav-toggle');
+const overlay = document.getElementById('nav-overlay');
+toggle.addEventListener('click', () => {
+  toggle.classList.toggle('open');
+  overlay.classList.toggle('open');
+});
+overlay.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  toggle.classList.remove('open');
+  overlay.classList.remove('open');
+}));
+</script>
 </body>
 </html>

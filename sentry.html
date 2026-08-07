@@ -18,8 +18,22 @@
     <li><a href="/validator.html">Validator</a></li>
     <li><a href="/vault.html">Vault</a></li>
   </ul>
-  <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
+  <div class="nav-end"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+  </button>
 </nav>
+
+<div class="nav-mobile-overlay" id="nav-overlay">
+  <a href="/index.html">Home</a>
+  <a href="/sentry.html" class="active">Sentry</a>
+  <a href="/encoder.html">Encoder</a>
+  <a href="/validator.html">Validator</a>
+  <a href="/vault.html">Vault</a>
+  <div class="mobile-nav-badge"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+</div>
 
 <div class="page">
   <div class="page-header">
@@ -87,5 +101,17 @@
 
 <script type="module" src="/sentry.js"></script>
 <script type="module" src="/cursor.js"></script>
+<script>
+const toggle = document.getElementById('nav-toggle');
+const overlay = document.getElementById('nav-overlay');
+toggle.addEventListener('click', () => {
+  toggle.classList.toggle('open');
+  overlay.classList.toggle('open');
+});
+overlay.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  toggle.classList.remove('open');
+  overlay.classList.remove('open');
+}));
+</script>
 </body>
 </html>

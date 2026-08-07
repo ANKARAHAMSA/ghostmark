@@ -12,13 +12,28 @@
 <nav class="nav">
   <div class="nav-brand"><span class="nav-brand-logo"><img src="/logo.svg" alt="Ghostmark Logo" width="22" height="22" /></span>Ghostmark</div>
   <ul class="nav-links">
+    <li><a href="/index.html">Home</a></li>
     <li><a href="/sentry.html">Sentry</a></li>
     <li><a href="/encoder.html">Encoder</a></li>
     <li><a href="/validator.html">Validator</a></li>
     <li><a href="/vault.html" class="active">Vault</a></li>
   </ul>
-  <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
+  <div class="nav-end"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+  </button>
 </nav>
+
+<div class="nav-mobile-overlay" id="nav-overlay">
+  <a href="/index.html">Home</a>
+  <a href="/sentry.html">Sentry</a>
+  <a href="/encoder.html">Encoder</a>
+  <a href="/validator.html">Validator</a>
+  <a href="/vault.html" class="active">Vault</a>
+  <div class="mobile-nav-badge"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+</div>
 
 <div class="page">
   <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:40px;">
@@ -36,5 +51,17 @@
 
 <script type="module" src="/vault.js"></script>
 <script type="module" src="/cursor.js"></script>
+<script>
+const toggle = document.getElementById('nav-toggle');
+const overlay = document.getElementById('nav-overlay');
+toggle.addEventListener('click', () => {
+  toggle.classList.toggle('open');
+  overlay.classList.toggle('open');
+});
+overlay.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  toggle.classList.remove('open');
+  overlay.classList.remove('open');
+}));
+</script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 import { embedWatermark, loadImageToCanvas, canvasToBlob } from './watermark.js';
+import { embedFrequency, frequencyCapacity } from './frequency_watermark.js';
 
 let imgData = null, origCanvas = null, blobUrl = null;
+let selectedAlgo = 'lsb'; // 'lsb' | 'dwtdct'
 const $ = id => document.getElementById(id);
 
 // DOM
@@ -13,7 +15,28 @@ const progArea = $('prog-area'), progBar = $('prog-bar'), progLbl = $('prog-labe
 const resultArea = $('result-area'), cmpSection = $('compare-section');
 const origC = $('original-canvas'), outC = $('output-canvas');
 
-// Drop zone
+// ── Algorithm selector ────────────────────────────────────────────────
+const algoCards = document.querySelectorAll('.algo-card');
+algoCards.forEach(card => {
+  card.addEventListener('click', () => {
+    algoCards.forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    selectedAlgo = card.dataset.algo;
+    // Update capacity display if image already loaded
+    if (imgData) updateCapacity(imgData.width, imgData.height);
+    reset();
+  });
+});
+
+function updateCapacity(w, h) {
+  if (selectedAlgo === 'dwtdct') {
+    cap.textContent = fmt(frequencyCapacity(w, h));
+  } else {
+    cap.textContent = fmt(Math.floor(w * h * 6 / 8));
+  }
+}
+
+// ── Drop zone ─────────────────────────────────────────────────────────
 dz.addEventListener('click', () => { fi.value = ''; fi.click(); });
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('over'));
@@ -33,7 +56,7 @@ async function load(file) {
   prevCanvas.classList.remove('hidden'); dzInner.classList.add('hidden');
   dims.textContent = `${r.width}×${r.height}`;
   sz.textContent   = fmt(file.size);
-  cap.textContent  = fmt(Math.floor(r.width * r.height * 6 / 8));
+  updateCapacity(r.width, r.height);
   imgMeta.classList.remove('hidden');
   ready(); reset();
 }
@@ -52,11 +75,22 @@ encBtn.addEventListener('click', async () => {
   progArea.classList.remove('hidden');
 
   try {
-    await anim(0, 40, 300); progLbl.textContent = 'Analysing pixel matrix…';
     const clone = new ImageData(new Uint8ClampedArray(imgData.data), imgData.width, imgData.height);
-    await anim(40, 80, 400); progLbl.textContent = 'Writing payload to LSB channels…';
-    embedWatermark(clone, wmt.value.trim());
-    await anim(80, 100, 200);
+    const isFreq = selectedAlgo === 'dwtdct';
+    const algoLabel = isFreq ? 'DWT-DCT + Arnold Cat Map' : 'LSB Steganography';
+
+    if (isFreq) {
+      await anim(0, 20, 200); progLbl.textContent = 'Scrambling with Arnold Cat Map…';
+      await anim(20, 55, 400); progLbl.textContent = 'Applying Haar DWT on image blocks…';
+      await anim(55, 75, 300); progLbl.textContent = 'Modifying DCT mid-frequency coefficients…';
+      embedFrequency(clone, wmt.value.trim());
+      await anim(75, 100, 250);
+    } else {
+      await anim(0, 40, 300); progLbl.textContent = 'Analysing pixel matrix…';
+      await anim(40, 80, 400); progLbl.textContent = 'Writing payload to LSB channels…';
+      embedWatermark(clone, wmt.value.trim());
+      await anim(80, 100, 200);
+    }
 
     const oc = outC.getContext('2d');
     outC.width = clone.width; outC.height = clone.height;
@@ -78,7 +112,7 @@ encBtn.addEventListener('click', async () => {
         <span class="result-pip"></span>
         <div>
           <div class="result-label">Watermark embedded</div>
-          <div class="result-sub">${pb} bytes · ${clone.width}×${clone.height}px · lossless PNG output</div>
+          <div class="result-sub">${pb} bytes · ${clone.width}×${clone.height}px · ${algoLabel} · lossless PNG output</div>
         </div>
       </div>`;
 
@@ -86,7 +120,14 @@ encBtn.addEventListener('click', async () => {
     const e = parseInt(sessionStorage.getItem('gm_enc') || '0') + 1;
     sessionStorage.setItem('gm_enc', e);
     const ev = JSON.parse(sessionStorage.getItem('gm_ev') || '[]');
-    ev.push({ type: 'encode', title: 'Image watermarked', detail: `${pb} bytes · ${clone.width}×${clone.height}px`, payload: wmt.value.trim(), time: new Date().toLocaleTimeString() });
+    ev.push({
+      type: 'encode',
+      title: 'Image watermarked',
+      detail: `${pb} bytes · ${clone.width}×${clone.height}px · ${isFreq ? 'DWT-DCT' : 'LSB'}`,
+      payload: wmt.value.trim(),
+      algo: selectedAlgo,
+      time: new Date().toLocaleTimeString()
+    });
     sessionStorage.setItem('gm_ev', JSON.stringify(ev));
     toast('Watermark embedded', 'ok');
   } catch(err) {
@@ -99,7 +140,9 @@ encBtn.addEventListener('click', async () => {
 
 dlBtn.addEventListener('click', () => {
   if (!blobUrl) return;
-  const a = document.createElement('a'); a.href = blobUrl; a.download = 'ghostmark_watermarked.png'; a.click();
+  const a = document.createElement('a'); a.href = blobUrl;
+  a.download = selectedAlgo === 'dwtdct' ? 'ghostmark_dwtdct.png' : 'ghostmark_watermarked.png';
+  a.click();
 });
 
 function anim(a, b, ms) {

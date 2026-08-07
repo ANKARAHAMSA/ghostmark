@@ -1,4 +1,5 @@
 import { extractWatermark, analyzeImageIntegrity, loadImageToCanvas } from './watermark.js';
+import { extractFrequency } from './frequency_watermark.js';
 
 let imgData = null, imgPixels = 0, currentCanvas = null;
 const $ = id => document.getElementById(id);
@@ -26,7 +27,7 @@ async function load(file) {
   prevCanvas.height = r.height;
   pc.drawImage(r.canvas, 0, 0);
 
-  fi.value = ''; // Clear file input value so selecting the same image or new image triggers change event every time
+  fi.value = '';
   prevCanvas.classList.remove('hidden');
   dzInner.classList.add('hidden');
   scanBtn.disabled = false;
@@ -45,14 +46,30 @@ scanBtn.addEventListener('click', async () => {
 
   await new Promise(r => setTimeout(r, 600));
 
-  // 1. Extract Watermark Payload
-  const res = extractWatermark(imgData);
+  // 1. Try LSB first (fast header scan)
+  let res = extractWatermark(imgData);
+  let detectedAlgo = 'lsb';
 
-  // 2. Analyze Tamper & LSB Integrity Grid
+  // 2. If LSB not found, try DWT-DCT frequency watermark
+  if (!res.found) {
+    try {
+      const freqRes = extractFrequency(imgData);
+      if (freqRes.found) {
+        res = freqRes;
+        detectedAlgo = 'dwtdct';
+      }
+    } catch(e) {
+      // freq extraction failed — image is clean
+    }
+  }
+
+  // 3. Analyze Tamper & LSB Integrity Grid
   const integrity = analyzeImageIntegrity(imgData, res.found);
 
   // Track session stats
   const ev = JSON.parse(sessionStorage.getItem('gm_ev') || '[]');
+  const algoLabel = detectedAlgo === 'dwtdct' ? 'DWT-DCT + Arnold' : 'LSB';
+
   if (res.found) {
     const v = parseInt(sessionStorage.getItem('gm_ver') || '0') + 1;
     const s = parseInt(sessionStorage.getItem('gm_scan') || '0') + 1;
@@ -60,7 +77,7 @@ scanBtn.addEventListener('click', async () => {
     ev.push({
       type: 'scan_found',
       title: 'Watermark & Integrity Scanned',
-      detail: `${new TextEncoder().encode(res.message).length} bytes | Integrity: ${integrity.overallScore}%`,
+      detail: `${new TextEncoder().encode(res.message).length} bytes | ${algoLabel} | Integrity: ${integrity.overallScore}%`,
       payload: res.message,
       time: new Date().toLocaleTimeString()
     });
@@ -83,10 +100,15 @@ scanBtn.addEventListener('click', async () => {
 
   if (res.found) {
     const pb = new TextEncoder().encode(res.message).length;
+    const algoBadge = detectedAlgo === 'dwtdct'
+      ? `<span style="font-family:var(--f-mono);font-size:10px;background:rgba(200,240,0,0.1);color:var(--lime);border:1px solid rgba(200,240,0,0.3);border-radius:3px;padding:2px 7px;margin-left:8px;">DWT-DCT + Arnold</span>`
+      : `<span style="font-family:var(--f-mono);font-size:10px;background:var(--bg-3);color:var(--text-3);border:1px solid var(--border-2);border-radius:3px;padding:2px 7px;margin-left:8px;">LSB</span>`;
+
     resultSection.innerHTML = `
       <div class="payload-status-row">
         <span class="payload-pip found"></span>
         <span class="payload-status-label found">Watermark Authentic</span>
+        ${algoBadge}
         <span class="payload-status-sub">${ts}</span>
       </div>
 
@@ -100,7 +122,7 @@ scanBtn.addEventListener('click', async () => {
 
       <div class="payload-meta">
         <div><div class="payload-meta-val">${pb}</div><div class="payload-meta-key">Bytes</div></div>
-        <div><div class="payload-meta-val">${integrity.overallScore}%</div><div class="payload-meta-key">LSB Integrity</div></div>
+        <div><div class="payload-meta-val">${integrity.overallScore}%</div><div class="payload-meta-key">Integrity Score</div></div>
         <div><div class="payload-meta-val">99.8%</div><div class="payload-meta-key">Confidence</div></div>
       </div>
 
@@ -159,7 +181,7 @@ scanBtn.addEventListener('click', async () => {
       </div>
 
       <p style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:14px;">
-        No Ghostmark signature found in this image. It is a standard unwatermarked image or has lost low-order bit data due to JPEG compression.
+        No Ghostmark signature found. Both LSB and DWT-DCT algorithms were tested. This image is either unwatermarked or has lost watermark data due to heavy JPEG compression.
       </p>
 
       <button class="btn btn-outline" id="toggle-heatmap-btn" style="width: 100%;">
