@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ghostmark — Invisible Watermarking</title>
-  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
@@ -171,8 +171,14 @@
 
     body { overflow-x: hidden; }
     html { scroll-behavior: smooth; }
+    @media (max-width: 640px) {
+      #intro { height: min(100vh, 560px); }
+      #scroll-cue { bottom: 24px; }
+      .landing-hero { padding: calc(var(--nav-h) + 48px) var(--pad) 60px; gap: 36px; }
+      .tech-strip { gap: 16px; }
+    }
   </style>
-  <link rel="stylesheet" crossorigin href="./assets/shared-DInvxCuO.css">
+  <link rel="stylesheet" crossorigin href="/assets/shared-DGz0fDJ6.css">
 </head>
 <body>
 
@@ -180,7 +186,7 @@
      NAV BAR (Hidden during intro)
 ═══════════════════════════════════════ -->
 <nav class="nav nav-hidden" id="main-nav">
-  <div class="nav-brand"><span class="nav-brand-logo"><img src="./logo.svg" alt="Ghostmark Logo" width="22" height="22" /></span>Ghostmark</div>
+  <div class="nav-brand"><span class="nav-brand-logo"><img src="/logo.svg" alt="Ghostmark Logo" width="22" height="22" /></span>Ghostmark</div>
   <ul class="nav-links">
     <li><a href="/index.html" class="active">Home</a></li>
     <li><a href="/sentry.html">Sentry</a></li>
@@ -188,8 +194,22 @@
     <li><a href="/validator.html">Validator</a></li>
     <li><a href="/vault.html">Vault</a></li>
   </ul>
-  <div class="nav-end"><span class="pip-sm"></span>LSB Engine · Online</div>
+  <div class="nav-end"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+  </button>
 </nav>
+
+<div class="nav-mobile-overlay" id="nav-overlay">
+  <a href="/index.html" class="active">Home</a>
+  <a href="/sentry.html">Sentry</a>
+  <a href="/encoder.html">Encoder</a>
+  <a href="/validator.html">Validator</a>
+  <a href="/vault.html">Vault</a>
+  <div class="mobile-nav-badge"><span class="pip-sm"></span>LSB / DWT-DCT · Online</div>
+</div>
 
 <!-- ══════════════════════════════════════
      INTRO — Fast Scene, Smooth Normal Head & Eye Motion
@@ -726,6 +746,20 @@
 
   window.addEventListener('scroll', updateNavVisibility, { passive: true });
   updateNavVisibility();
+
+  // Mobile nav toggle
+  const toggle = document.getElementById('nav-toggle');
+  const overlay = document.getElementById('nav-overlay');
+  if (toggle && overlay) {
+    toggle.addEventListener('click', () => {
+      toggle.classList.toggle('open');
+      overlay.classList.toggle('open');
+    });
+    overlay.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      toggle.classList.remove('open');
+      overlay.classList.remove('open');
+    }));
+  }
 </script>
 
 </body>
