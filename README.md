@@ -45,8 +45,8 @@ Ghostmark features **two core engines**:
 
 Embeds watermark bits into the 2 least significant bits of RGB pixel channels.
 
-- **Pixel Shift**: $p' = (p \;\&\; \text{0xFC}) \mid w \implies$ maximum shift of $\pm 3$ out of 255.
-- **Visual Quality**: $\text{PSNR} \ge 51 \text{ dB}$ (imperceptible change to the human eye).
+- **Pixel Shift**: `p' = (p & 0xFC) | w` — maximum shift of ±3 per channel (out of 255).
+- **Visual Quality**: PSNR ≥ 51 dB (imperceptible change to human eye).
 - **Header**: Includes `GHMK` magic header for deterministic payload extraction.
 
 ```
@@ -61,11 +61,11 @@ Embeds watermark bits into the 2 least significant bits of RGB pixel channels.
 
 ### Mode 02 — DWT-DCT + Arnold Scrambling (Frequency Domain)
 
-Inspired by *"Transformation Based Watermarking for Image Authentication"*, this mode converts $8 \times 8$ pixel blocks into frequency space using the 2D Discrete Cosine Transform (DCT-II).
+Inspired by *"Transformation Based Watermarking for Image Authentication"*, this mode converts 8×8 pixel blocks into frequency space using the 2D Discrete Cosine Transform (DCT-II).
 
 - **Payload Security**: Scrambles byte positions using a deterministic Fisher-Yates permutation key derived from `ARNOLD_ITERS`.
-- **Frequency Embedding**: Modifies 16 mid-frequency coefficients per block using Quantization Index Modulation ($\alpha = 32$).
-- **Robustness**: Uses $3\times$ redundancy with majority-vote decoding to achieve zero Bit Error Rate (BER) even under JPEG compression ($>75\%$ quality).
+- **Frequency Embedding**: Modifies 16 mid-frequency coefficients per block using Quantization Index Modulation (alpha = 32).
+- **Robustness**: Uses 3× redundancy with majority-vote decoding to achieve zero Bit Error Rate (BER) even under JPEG compression (> 75% quality).
 
 ---
 
@@ -74,9 +74,9 @@ Inspired by *"Transformation Based Watermarking for Image Authentication"*, this
 | Feature | LSB Steganography | DWT-DCT Frequency |
 |---|---|---|
 | **Domain** | Spatial (Pixel LSB) | Frequency (DCT Mid-Band) |
-| **JPEG Survival** | ❌ No | ✅ Yes ($>75\%$ quality) |
-| **Visual Quality (PSNR)** | $\ge 51 \text{ dB}$ | $\ge 40 \text{ dB}$ |
-| **Max Capacity (512×512)** | $\approx 196 \text{ KB}$ | $\approx 2.7 \text{ KB}$ |
+| **JPEG Survival** | ❌ No | ✅ Yes (> 75% quality) |
+| **Visual Quality (PSNR)** | ≥ 51 dB | ≥ 40 dB |
+| **Max Capacity (512×512)** | ~196 KB | ~2.7 KB |
 | **Scrambling** | None | Keyed Permutation |
 | **Best For** | High-res PNGs, lossless archives | JPEG sharing, social media |
 
