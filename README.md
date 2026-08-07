@@ -43,7 +43,9 @@ Ghostmark offers **two independent watermarking engines**, each suited for diffe
 
 Every pixel channel holds an 8-bit unsigned integer value $p \in [0, 255]$. The watermark bit $w \in \{0, 1\}$ is embedded by overwriting the least significant bits of $p$:
 
-$$p' = \left( p \;\&\; \underbrace{11111100}_{2} \right) \;\Big|\; w$$
+$$p' = \bigl(\, p \mathbin{\&} \mathtt{FC}_{16} \,\bigr) \mathbin{|} \, w$$
+
+> where $\mathtt{FC}_{16} = 11111100_2$ is the 2-bit mask that zeroes the two LSBs.
 
 For a 2-bit embedding depth (Ghostmark's default), the maximum per-channel distortion is:
 
@@ -100,11 +102,11 @@ The inverse permutation satisfies $\pi^{-1}(\pi(i)) = i$ for all $i$, guaranteei
 
 $$b_{\pi(i)} = b'_i \;\Longrightarrow\; b_i = b'_{\pi^{-1}(i)}$$
 
-> **Note:** This is inspired by the **Arnold Cat Map**, a chaotic 2D permutation from the paper *"Transformation Based Watermarking for Image Authentication"*. Arnold's map on an $N \times N$ grid is:
+> **Note:** This is inspired by the **Arnold Cat Map**, a chaotic 2D permutation from the paper *"Transformation Based Watermarking for Image Authentication"*. Arnold's map applies the following transform iteratively on an $N \times N$ grid:
 >
-> $$\begin{pmatrix} x' \\ y' \end{pmatrix} = \begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} \mod N$$
+> $$x' = (x + y) \bmod N, \qquad y' = (x + 2y) \bmod N$$
 >
-> Ghostmark uses a keyed Fisher-Yates shuffle for exact bijectivity on arbitrary-length arrays.
+> The transformation matrix $\mathbf{A} = \bigl[\begin{smallmatrix}1&1\\1&2\end{smallmatrix}\bigr]$ has $\det(\mathbf{A}) = 1$, making it area-preserving and invertible. Ghostmark uses a keyed Fisher-Yates shuffle for exact bijectivity on arbitrary-length arrays.
 
 ### Step 2 — 2D Discrete Cosine Transform (DCT-II)
 
@@ -114,7 +116,7 @@ $$F[u][v] = C(u)\,C(v) \sum_{m=0}^{7} \sum_{n=0}^{7} f[m][n] \cdot \cos\!\left(\
 
 where the orthonormality scaling factor is:
 
-$$C(k) = \begin{cases} \dfrac{1}{\sqrt{8}} & k = 0 \\ \dfrac{1}{2} & k \neq 0 \end{cases}$$
+$$C(k) = \begin{cases} \dfrac{1}{\sqrt{8}} & \text{if } k = 0 \\ \dfrac{1}{2} & \text{if } k \neq 0 \end{cases}$$
 
 The inverse transform (IDCT-II) reconstructs the spatial block:
 
@@ -126,7 +128,11 @@ The watermark bit $w \in \{0, 1\}$ is embedded into a DCT coefficient $F[pos]$ a
 
 $$q = \text{round}\!\left(\frac{F[\text{pos}]}{\alpha}\right)$$
 
-$$q^* = \begin{cases} q & \text{if } (|q| \bmod 2) = w \\ q + 1 & \text{if } (|q| \bmod 2) \neq w \text{ and } q \geq 0 \\ q - 1 & \text{if } (|q| \bmod 2) \neq w \text{ and } q < 0 \end{cases}$$
+$$q^* = \begin{cases}
+q & \text{if } (|q| \bmod 2) = w \\
+q + 1 & \text{if } (|q| \bmod 2) \neq w \text{ and } q \geq 0 \\
+q - 1 & \text{if } (|q| \bmod 2) \neq w \text{ and } q < 0
+\end{cases}$$
 
 $$F'[\text{pos}] = q^* \cdot \alpha$$
 
